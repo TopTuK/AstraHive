@@ -1,0 +1,6 @@
+@AH.SiloHost_HostAddress = http://localhost:5119
+
+GET {{AH.SiloHost_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

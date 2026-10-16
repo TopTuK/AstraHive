@@ -1,0 +1,12 @@
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\bin\Debug\net10.0\AstraHive.ServiceDefaults.deps.json
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\bin\Debug\net10.0\AstraHive.ServiceDefaults.dll
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\bin\Debug\net10.0\AstraHive.ServiceDefaults.pdb
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.csproj.AssemblyReference.cache
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.GeneratedMSBuildEditorConfig.editorconfig
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.AssemblyInfoInputs.cache
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.AssemblyInfo.cs
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.csproj.CoreCompileInputs.cache
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.dll
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\refint\AstraHive.ServiceDefaults.dll
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\AstraHive.ServiceDefaults.pdb
+C:\Work\Dev\AstraHive\AstraHive.ServiceDefaults\obj\Debug\net10.0\ref\AstraHive.ServiceDefaults.dll

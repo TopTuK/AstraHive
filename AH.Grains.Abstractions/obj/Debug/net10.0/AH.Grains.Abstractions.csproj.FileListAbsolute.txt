@@ -1,0 +1,11 @@
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\bin\Debug\net10.0\AH.Grains.Abstractions.deps.json
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\bin\Debug\net10.0\AH.Grains.Abstractions.dll
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\bin\Debug\net10.0\AH.Grains.Abstractions.pdb
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\AH.Grains.Abstractions.GeneratedMSBuildEditorConfig.editorconfig
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\AH.Grains.Abstractions.AssemblyInfoInputs.cache
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\AH.Grains.Abstractions.AssemblyInfo.cs
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\AH.Grains.Abstractions.csproj.CoreCompileInputs.cache
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\AH.Grains.Abstractions.dll
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\refint\AH.Grains.Abstractions.dll
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\AH.Grains.Abstractions.pdb
+c:\Work\Dev\AstraHive\AH.Grains.Abstractions\obj\Debug\net10.0\ref\AH.Grains.Abstractions.dll

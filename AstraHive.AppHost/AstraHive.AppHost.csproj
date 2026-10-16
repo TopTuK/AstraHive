@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>4a210cfd-f1ea-4910-82f1-92ad9a28e881</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AH.IdentityService\AH.IdentityService.csproj" />
+    <ProjectReference Include="..\AH.SiloHost\AH.SiloHost.csproj" />
+    <ProjectReference Include="..\AH.WebApi\AH.WebApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.6.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#0b1220"/>
+  <polygon points="16.00,12.45 19.07,14.22 19.07,17.77 16.00,19.55 12.93,17.77 12.93,14.22" fill="#3b82f6" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <polygon points="16.00,6.30 19.07,8.08 19.07,11.63 16.00,13.40 12.93,11.63 12.93,8.08" fill="none" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <polygon points="21.32,9.38 24.40,11.15 24.40,14.70 21.32,16.48 18.25,14.70 18.25,11.15" fill="none" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <polygon points="21.32,15.52 24.40,17.30 24.40,20.85 21.32,22.62 18.25,20.85 18.25,17.30" fill="none" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <polygon points="16.00,18.60 19.07,20.37 19.07,23.92 16.00,25.70 12.93,23.92 12.93,20.37" fill="none" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <polygon points="10.68,15.52 13.75,17.30 13.75,20.85 10.68,22.62 7.60,20.85 7.60,17.30" fill="none" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <polygon points="10.68,9.38 13.75,11.15 13.75,14.70 10.68,16.48 7.60,14.70 7.60,11.15" fill="none" stroke="#9fd8f5" stroke-width="0.7" stroke-linejoin="round"/>
+  <path d="M8.2 7.25 L8.48 8.12 L9.35 8.40 L8.48 8.68 L8.20 9.55 L7.92 8.68 L7.05 8.40 L7.92 8.12 Z" fill="#9fd8f5"/>
+  <path d="M23.8 7.25 L24.08 8.12 L24.95 8.40 L24.08 8.68 L23.80 9.55 L23.52 8.68 L22.65 8.40 L23.52 8.12 Z" fill="#9fd8f5"/>
+  <path d="M6.4 14.85 L6.68 15.72 L7.55 16.00 L6.68 16.28 L6.40 17.15 L6.12 16.28 L5.25 16.00 L6.12 15.72 Z" fill="#9fd8f5"/>
+  <path d="M25.6 14.85 L25.88 15.72 L26.75 16.00 L25.88 16.28 L25.60 17.15 L25.32 16.28 L24.45 16.00 L25.32 15.72 Z" fill="#9fd8f5"/>
+  <path d="M10.2 23.45 L10.48 24.32 L11.35 24.60 L10.48 24.88 L10.20 25.75 L9.92 24.88 L9.05 24.60 L9.92 24.32 Z" fill="#9fd8f5"/>
+  <path d="M21.8 23.45 L22.08 24.32 L22.95 24.60 L22.08 24.88 L21.80 25.75 L21.52 24.88 L20.65 24.60 L21.52 24.32 Z" fill="#9fd8f5"/>
+</svg>

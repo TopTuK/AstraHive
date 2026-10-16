@@ -1,0 +1,154 @@
+{
+  "app": {
+    "name": "AstraHive",
+    "tagline": "Virtual machine orchestration"
+  },
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "howItWorks": "How it works",
+    "signIn": "Sign in",
+    "dashboard": "Dashboard",
+    "clusters": "Clusters",
+    "machines": "Virtual machines",
+    "sessions": "SSH sessions",
+    "tasks": "Scheduled tasks",
+    "settings": "Settings",
+    "mainNavigation": "Main navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "sidebar": {
+    "orchestration": "Orchestration",
+    "automation": "Automation",
+    "system": "System",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "theme": {
+    "toggle": "Toggle color theme"
+  },
+  "locale": {
+    "label": "Language",
+    "en": "English",
+    "ru": "Русский"
+  },
+  "header": {
+    "userMenu": "User menu",
+    "account": "Account",
+    "profile": "Profile",
+    "signOut": "Sign out"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "VM orchestration // SSH",
+      "title": "Operate your virtual machines",
+      "titleAccent": "from one console",
+      "subtitle": "AstraHive connects to your virtual machines over SSH so you can run maintenance operations, group machines into clusters and schedule recurring tasks without juggling terminals.",
+      "ctaPrimary": "Sign in",
+      "ctaSecondary": "See how it works",
+      "status": "Early preview",
+      "imageAlt": "A hive of virtual machines linked across a network"
+    },
+    "specs": {
+      "transport": "Transport",
+      "transportValue": "SSH",
+      "targets": "Targets",
+      "targetsValue": "Virtual machines",
+      "grouping": "Grouping",
+      "groupingValue": "Clusters",
+      "scheduling": "Scheduling",
+      "schedulingValue": "Recurring tasks"
+    },
+    "terminal": {
+      "label": "Session preview"
+    },
+    "features": {
+      "label": "Capabilities",
+      "title": "Everything a maintenance window needs",
+      "subtitle": "One place to reach your fleet, act on it and keep it healthy.",
+      "ssh": {
+        "title": "SSH operations",
+        "text": "Open sessions to any registered machine and run maintenance commands: updates, restarts, log collection, disk cleanup."
+      },
+      "clusters": {
+        "title": "Clusters",
+        "text": "Group virtual machines into clusters and run the same operation across all of them in a single step."
+      },
+      "tasks": {
+        "title": "Scheduled tasks",
+        "text": "Define recurring tasks once and let AstraHive execute them on schedule against a machine or a whole cluster."
+      },
+      "audit": {
+        "title": "Run history",
+        "text": "Every operation is recorded with its target, output and exit status, so you always know what changed and when."
+      }
+    },
+    "how": {
+      "label": "Workflow",
+      "title": "How it works",
+      "step1": {
+        "title": "Register machines",
+        "text": "Add your virtual machines with their SSH endpoints and credentials."
+      },
+      "step2": {
+        "title": "Group into clusters",
+        "text": "Organize machines by environment, role or location."
+      },
+      "step3": {
+        "title": "Run or schedule",
+        "text": "Execute operations now or put them on a recurring schedule."
+      }
+    },
+    "cta": {
+      "title": "Ready to take control of your fleet?",
+      "text": "Sign in to the console to start managing your virtual machines.",
+      "button": "Open console"
+    }
+  },
+  "footer": {
+    "rights": "AstraHive",
+    "description": "Virtual machine orchestration over SSH."
+  },
+  "login": {
+    "label": "Access",
+    "title": "Sign in to AstraHive",
+    "text": "Authentication is not configured yet. Sign-in will be available once the identity service is in place.",
+    "back": "Back to home",
+    "imageAlt": "A server secured by a hexagonal lock"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "The page you are looking for does not exist or has been moved.",
+    "back": "Back to home",
+    "imageAlt": "A broken connection between two nodes"
+  },
+  "placeholder": {
+    "title": "Coming soon",
+    "text": "This section is under construction."
+  },
+  "dashboard": {
+    "subtitle": "Overview of your infrastructure",
+    "stats": {
+      "clusters": "Clusters",
+      "machines": "Virtual machines",
+      "sessions": "Active sessions",
+      "tasks": "Scheduled tasks"
+    },
+    "empty": "No data yet. Register your first virtual machine to get started.",
+    "imageAlt": "A single machine waiting on an empty grid"
+  },
+  "images": {
+    "clusters": "Three clusters of connected machines",
+    "machines": "A row of virtual machines",
+    "sessions": "A terminal session linked to a machine",
+    "tasks": "A recurring schedule orbiting a ring of tasks",
+    "settings": "A settings dial with two switches"
+  },
+  "status": {
+    "running": "Running",
+    "stopped": "Stopped",
+    "error": "Error",
+    "pending": "Pending"
+  }
+}

@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="AH.AppDomain/AH.AppDomain.csproj" />
+    <Project Path="AH.Application/AH.Application.csproj" />
+    <Project Path="AH.Grains.Abstractions/AH.Grains.Abstractions.csproj" Id="b87a7e44-3df8-4cb6-a1ac-07f4877f670c" />
+    <Project Path="AH.Grains/AH.Grains.csproj" Id="e1a22c64-32de-4cdc-872a-03bcc7eca379" />
+    <Project Path="AH.IdentityService/AH.IdentityService.csproj" />
+    <Project Path="AH.Infrastructure/AH.Infrastructure.csproj" />
+    <Project Path="AH.SiloHost/AH.SiloHost.csproj" />
+    <Project Path="AH.WebApi/AH.WebApi.csproj" />
+    <Project Path="ah.webapp/ah.webapp.esproj">
+      <Build />
+      <Deploy />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/" />
+  <Project Path="AstraHive.AppHost/AstraHive.AppHost.csproj" />
+  <Project Path="AstraHive.ServiceDefaults/AstraHive.ServiceDefaults.csproj" />
+</Solution>
