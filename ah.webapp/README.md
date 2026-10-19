@@ -1,6 +1,6 @@
 # ah.webapp
 
-AstraHive web console: Vue 3 + Vite frontend for the virtual machine orchestrator.
+Astra Hive web console: Vue 3 + Vite frontend for the virtual machine orchestrator.
 
 ## Stack
 
@@ -10,12 +10,12 @@ Vue 3 (`<script setup>`, JavaScript), Vite, Tailwind CSS v4, Pinia, Vue Router, 
 
 ```sh
 npm install
-npm run dev      # standalone dev server (http://localhost:57976)
-npm run build    # production build into dist/
-npm run lint     # oxlint + eslint
+npm run build:watch  # development build into ../AH.WebApi/wwwroot, rebuilt on every change
+npm run build        # production build into ../AH.WebApi/wwwroot
+npm run lint         # oxlint + eslint
 ```
 
-Usually the app is started with the rest of the system from the repository root via `aspire run`. The AppHost registers it as `ah-webapp` and proxies `/api` to `ah-webapi`.
+Usually the app is started with the rest of the system from the repository root via `aspire run`. The AppHost registers it as `ah-webapp` (running `build:watch`) and `ah-webapi` serves the bundle at https://localhost:7093. Refresh the browser after an edit (no HMR).
 
 ## Layout
 

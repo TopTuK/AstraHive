@@ -1,0 +1,84 @@
+# ---------------------------------------------------------------------------
+# .NET build output
+# ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+
+# Test results / coverage
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# ---------------------------------------------------------------------------
+# IDEs and editors
+# ---------------------------------------------------------------------------
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+*.ncb
+*.aps
+*.VC.db
+*.VC.VC.opendb
+ipch/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# VS Code (keep shared workspace recommendations)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ---------------------------------------------------------------------------
+# Secrets and local configuration (OAuth secrets live in dotnet user-secrets)
+# ---------------------------------------------------------------------------
+*.env
+.env.*
+!.env.example
+appsettings.*.local.json
+*.pfx
+*.p12
+
+# Claude Code: personal settings stay local, shared ones may be committed
+.claude/settings.local.json
+
+# ---------------------------------------------------------------------------
+# Node (frontend specifics live in ah.webapp/.gitignore)
+# ---------------------------------------------------------------------------
+node_modules/
+
+# ---------------------------------------------------------------------------
+# OS files
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.swp
+*~
+
+# SPA bundle produced by `npm run build` in ah.webapp (served by AH.WebApi in production)
+AH.WebApi/wwwroot/

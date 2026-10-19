@@ -9,7 +9,10 @@ const authStore = useAuthStore();
 
 <template>
   <TooltipProvider>
-    <AuthorizedLayout v-if="authStore.isAuthenticated" />
-    <UnauthorizedLayout v-else />
+    <!-- Wait for the session probe (run by the router guard) so the wrong layout never flashes. -->
+    <template v-if="authStore.initialized">
+      <AuthorizedLayout v-if="authStore.isAuthenticated" />
+      <UnauthorizedLayout v-else />
+    </template>
   </TooltipProvider>
 </template>

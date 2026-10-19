@@ -1,8 +1,8 @@
-# AstraHive
+# Astra Hive
 
 **A virtual machine orchestration system** built on .NET 10, Microsoft Orleans, and .NET Aspire.
 
-AstraHive lets operators manage fleets of virtual machines grouped into clusters: connect to any VM over SSH to perform maintenance operations, and schedule recurrent tasks that run automatically across the fleet.
+Astra Hive lets operators manage fleets of virtual machines grouped into clusters: connect to any VM over SSH to perform maintenance operations, and schedule recurrent tasks that run automatically across the fleet.
 
 ## Core Capabilities
 
@@ -15,31 +15,7 @@ AstraHive lets operators manage fleets of virtual machines grouped into clusters
 
 ## Architecture
 
-AstraHive follows **Clean Architecture** and is orchestrated with **.NET Aspire**:
-
-```
-┌─────────────┐     HTTP/JSON      ┌──────────────┐
-│  ah.webapp  │ ─────────────────► │  AH.WebApi   │────┐
-│  (Vue 3)    │                    │ (ASP.NET API)│    │ Orleans client
-└─────────────┘                    └──────────────┘    │
-                                          │            ▼
-                                          │   ┌──────────────────┐
-   ┌──────────────────┐   gRPC           │   │  AH.SiloHost     │
-   │ AH.IdentityService│ ◄───────────────┼──►│  (Orleans silo)   │
-   └──────────────────┘                  │   └──────────────────┘
-                                          │            │
-                                          ▼            ▼
-                                  ┌─────────────────────────┐
-                                  │ PostgreSQL (EF Core)    │
-                                  └─────────────────────────┘
-                     Everything provisioned & wired by Aspire
-```
-
-Key ideas:
-
-- **Orleans grains** give each entity (a VM, a cluster, a scheduled task) a single-threaded address. Grains are thin; business rules live in the domain and application layers, and domain data persists in PostgreSQL via EF Core — not in `IPersistentState<T>`.
-- **Aspire** orchestrates all resources (database, services, frontend) with service discovery — no hardcoded connection strings or URLs.
-- **Layered dependencies** are strictly enforced: `AppDomain` → nothing; `Application` → `AppDomain`; `Infrastructure` → `Application`; composition roots (`WebApi`, `SiloHost`) wire everything together.
+How the processes, the identity flow, and the layer rules fit together is described in [architecture.md](architecture.md), with diagrams of the running system and of the Orleans orchestration that is not built yet.
 
 ## Solution Layout
 
@@ -48,11 +24,11 @@ Key ideas:
 | `AH.AppDomain/` | Domain: entities, value objects, enums, domain errors. No dependencies. |
 | `AH.Application/` | Use cases (commands/queries + handlers), DTOs, validators, `IAppDbContext`. |
 | `AH.Infrastructure/` | EF Core (`AppDbContext`, configurations, migrations), external adapters. |
-| `AH.WebApi/` | ASP.NET Core Web API (controllers); composition root; Orleans client. |
+| `AH.WebApi/` | ASP.NET Core Web API (controllers); serves the SPA; gRPC client of IdentityService. |
 | `AH.Grains.Abstractions/` | Orleans grain interfaces + serializable grain messages. |
 | `AH.Grains/` | Grain implementations (thin; delegate to domain/application). |
-| `AH.SiloHost/` | Orleans silo host with health endpoints; composition root. |
-| `AH.IdentityService/` | gRPC identity/auth service (design TBD). |
+| `AH.SiloHost/` | Future Orleans silo host. Health endpoints only today. |
+| `AH.IdentityService/` | gRPC service that owns users. See [architecture.md](architecture.md). |
 | `ah.webapp/` | Vue 3 + Vite frontend. |
 | `AstraHive.AppHost/` | Aspire AppHost: orchestrates all resources. |
 | `AstraHive.ServiceDefaults/` | OpenTelemetry, health checks, service discovery, HTTP resilience. |
@@ -65,7 +41,7 @@ Projects sit at the repository root; `/src/` and `/tests/` in `AstraHive.slnx` a
 - **Database:** PostgreSQL via EF Core + Npgsql (Aspire integration)
 - **Caching:** HybridCache (in-memory L1; Redis L2 can be added via Aspire later)
 - **Validation & errors:** FluentValidation, ProblemDetails (RFC 9457)
-- **Identity:** gRPC service (`AH.IdentityService`), design TBD
+- **Identity:** Google and Yandex sign-in in `AH.WebApi`; users owned by gRPC `AH.IdentityService`
 - **Observability:** OpenTelemetry → Aspire dashboard
 - **Frontend:** Vue 3, Vite 8, Node `^22.18 || >=24.12`
 - **Testing:** xUnit v3, WebApplicationFactory, Testcontainers PostgreSQL, Verify
@@ -77,7 +53,7 @@ Projects sit at the repository root; `/src/` and `/tests/` in `AstraHive.slnx` a
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (10.0.4xx)
 - [Aspire CLI](https://learn.microsoft.com/dotnet/aspire/fundamentals/setup-tooling) (`dotnet tool install -g aspire.cli`)
 - Node.js `^22.18 || >=24.12` (for the frontend)
-- Docker (for PostgreSQL via Aspire, once wired)
+- Docker (PostgreSQL via Aspire)
 
 ### Run
 
@@ -95,8 +71,8 @@ The Aspire dashboard shows every resource's logs, traces, and metrics.
 ```bash
 cd ah.webapp
 npm install
-npm run dev      # dev server (port 57976)
-npm run lint     # oxlint + eslint
+npm run build:watch  # build into AH.WebApi/wwwroot on every change (served at https://localhost:7093)
+npm run lint         # oxlint + eslint
 ```
 
 ### Build & Test
@@ -116,11 +92,10 @@ dotnet ef database update --project AH.Infrastructure --startup-project AH.WebAp
 
 ## Current State
 
-The solution is an early skeleton:
+Identity and the web console run. Virtual machine orchestration does not. Details and diagrams are in [architecture.md](architecture.md).
 
-- The Clean Architecture layer projects exist but are **empty and not yet wired together** — no domain entities, handlers, grains, or controllers yet.
-- `AH.SiloHost`, `AH.WebApi`, and `AH.IdentityService` run stock templates (Orleans and PostgreSQL wiring are planned, not installed).
-- `ah.webapp` is a fresh Vue 3 scaffold.
-- The Aspire AppHost currently starts the three backend services; database and frontend resources will be added as features land.
+- Users live in PostgreSQL. `AH.IdentityService` owns the schema and applies migrations on startup in Development. `AH.WebApi` signs users in with Google or Yandex and calls that service over gRPC.
+- `ah.webapp` is the Vue console (sign-in, welcome, profile). Under `aspire run` it rebuilds into `AH.WebApi/wwwroot`.
+- `AH.SiloHost` and the grain projects are placeholders. Orleans is not hosted yet.
 
-Architecture and coding conventions for contributors and AI agents are documented in [`AGENTS.md`](AGENTS.md).
+Coding conventions for contributors and AI agents are documented in [`AGENTS.md`](AGENTS.md).

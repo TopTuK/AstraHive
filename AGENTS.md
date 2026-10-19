@@ -17,21 +17,30 @@ Status: early skeleton. The layer projects exist but are empty and not yet wired
 dotnet build AstraHive.slnx
 
 # Run the whole system (Aspire dashboard + all services)
-aspire run                      # or: dotnet run --project AstraHive.AppHost
+aspire run                      # requires the Aspire CLI: dotnet tool install --global Aspire.Cli
+# Note: `dotnet run --project AstraHive.AppHost` does NOT work — the AppHost uses
+# AspireUseCliBundle=true, so DCP/dashboard binaries come from the `aspire` CLI, not NuGet packages.
 
-# Tests
+# Tests (Docker must be running: handler tests start a PostgreSQL container)
 dotnet test AstraHive.slnx
 
-# EF Core migrations (DbContext in Infrastructure, startup project WebApi)
-dotnet ef migrations add <Name> --project AH.Infrastructure --startup-project AH.WebApi --output-dir Persistence/Migrations
-dotnet ef database update --project AH.Infrastructure --startup-project AH.WebApi
+# EF Core migrations (DbContext in Infrastructure, startup project IdentityService; dotnet-ef is a local tool)
+dotnet tool restore
+dotnet ef migrations add <Name> --project AH.Infrastructure --startup-project AH.IdentityService --output-dir Persistence/Migrations
+dotnet ef database update --project AH.Infrastructure --startup-project AH.IdentityService
+# (outside `aspire run` the tools need ConnectionStrings__astrahive set; IdentityService applies migrations on startup in Development)
+
+# OAuth credentials (once per machine; stored in AppHost user-secrets, never in appsettings)
+dotnet user-secrets --project AstraHive.AppHost set "Parameters:google-client-id" "<id>"   # also google-client-secret, yandex-client-id, yandex-client-secret
 
 # Format check
 dotnet format AstraHive.slnx --verify-no-changes
 
 # Frontend
-cd ah.webapp && npm install && npm run dev
+cd ah.webapp && npm install
+npm run build:watch             # rebuild into AH.WebApi/wwwroot on change (what `aspire run` does); npm run build = production
 npm run lint
+npm test                        # Vitest (npm run test:watch while developing)
 ```
 
 ## Solution Layout
@@ -43,11 +52,11 @@ AstraHive.slnx
 AH.AppDomain/              # Domain: entities, value objects, enums, domain errors. NO dependencies.
 AH.Application/            # Use cases (commands/queries + handlers), DTOs, validators, IAppDbContext. → AH.AppDomain
 AH.Infrastructure/         # EF Core (AppDbContext, configurations, migrations), external adapters. → AH.Application
-AH.WebApi/                 # ASP.NET Core Web API (controllers), composition root. → AH.Application, AH.Infrastructure
+AH.WebApi/                 # ASP.NET Core Web API (controllers), auth (cookie + Google/Yandex), serves the SPA (https://localhost:7093), composition root. → ServiceDefaults; gRPC client of IdentityService
 AH.Grains.Abstractions/    # Orleans grain interfaces + grain message records ([GenerateSerializer]). → nothing but Orleans SDK
 AH.Grains/                 # Grain implementations (thin; delegate to domain/handlers). → Grains.Abstractions, Application, AppDomain
 AH.SiloHost/               # Orleans silo host (Sdk.Web for health endpoints), composition root. → Grains, Application, Infrastructure, ServiceDefaults
-AH.IdentityService/        # gRPC service (Protos/*.proto); identity/auth service, design TBD
+AH.IdentityService/        # gRPC service (Protos/*.proto) that owns users (GetOrCreateUser); applies migrations in dev. → Application, Infrastructure
 ah.webapp/                 # Vue 3 + Vite frontend (JavaScript, oxlint + eslint)
 AstraHive.AppHost/         # Aspire AppHost: orchestrates all resources (DB, cache, services, frontend)
 AstraHive.ServiceDefaults/ # OpenTelemetry, health checks, service discovery, HTTP resilience
@@ -59,7 +68,8 @@ tests/                     # Test projects go here (physical folder, to be creat
 - `AH.AppDomain` references nothing (no EF Core, no ASP.NET, no NuGet packages beyond the BCL).
 - `AH.Application` references only `AH.AppDomain`. It may use `Microsoft.EntityFrameworkCore` abstractions for `DbSet<T>` in `IAppDbContext`, but never Npgsql or Infrastructure types.
 - `AH.Infrastructure` implements interfaces declared in `AH.Application`.
-- `AH.WebApi` and `AH.SiloHost` are the composition roots; both call `AddApplication()` + `AddInfrastructure()`. Controllers call Application handlers (or grains via `IGrainFactory`), never `AppDbContext` directly.
+- `AH.WebApi`, `AH.SiloHost` and `AH.IdentityService` are the composition roots; the ones that touch the database call `AddApplication()` + `AddInfrastructure()`. Controllers call Application handlers (or grains via `IGrainFactory`, or IdentityService via its gRPC client), never `AppDbContext` directly.
+- `AH.WebApi` consumes `AH.IdentityService` only through the linked `Protos/user_service.proto` (`GrpcServices="Client"`), never a project reference.
 - **Orleans stays out of the core:** `AH.AppDomain` and `AH.Application` never reference Orleans packages or attributes.
 - Orleans clients (`AH.WebApi`) reference only `AH.Grains.Abstractions`, never `AH.Grains`.
 - Each layer exposes a `DependencyInjection.cs` with an `Add<Layer>(this IServiceCollection)` / `IHostApplicationBuilder` extension.
@@ -100,21 +110,23 @@ tests/                     # Test projects go here (physical folder, to be creat
 - Design tokens live in `src/main.css` (shadcn semantic names + `sidebar-*`, `terminal-*`, `status-*`). Dark mode is `html[data-theme="dark"]`, switched by `src/theme`. Never hardcode colors in components.
 - Every UI string goes through i18n (`src/i18n/locales/en.json` + `ru.json`, keep both in sync).
 - shadcn-vue components live in `src/components/ui/` and are written by hand: the `shadcn-vue add` CLI fails in this environment (npm `allow-scripts` error).
-- API calls go to relative `/api`; Vite proxies them to `ah-webapi` through Aspire service discovery env vars. The frontend runs through the AppHost (`AddViteApp`).
+- **`AH.WebApi` serves the SPA** (same origin for the SPA, `/api` and the OAuth callbacks), in every environment from `AH.WebApi/wwwroot` (gitignored) with `UseStaticFiles` + `MapFallbackToFile("index.html")`. There is no Vite dev server and no proxy: under `aspire run` the AppHost runs `npm run build:watch` (`AddJavaScriptApp(..., runScriptName: "build:watch")`), which rebuilds into wwwroot on every change; refresh the browser to see edits (no HMR). Production: a Release build/publish of `AH.WebApi` runs `npm ci` (if needed) + `npm run build` via the `BuildSpa` target in `AH.WebApi.csproj` and ships wwwroot; `ah-webapp` exists only in run mode (`ExecutionContext.IsRunMode`), so `aspire publish` deploys no frontend container. Keep `UseStaticFiles` (not `MapStaticAssets`, whose build-time manifest misses runtime rebuilds). Open the app at **https://localhost:7093**.
+- Server data uses TanStack Query wrappers in `src/composables/` (e.g. `useProfile.js`) over `src/services/*Service.js`; Pinia keeps only session state (`authStore`).
+- API calls go to relative `/api` (no Vite proxy). Unknown `/api/*` routes return 404 instead of `index.html`.
 
 ## Tech Stack
 
 - **.NET 10** / C# 14, SDK 10.0.4xx
 - **.NET Aspire 13.6**: local orchestration, service discovery, dashboard (`aspire.config.json` points at the AppHost)
 - **ASP.NET Core Controllers** in `AH.WebApi` (chosen convention; keep controllers thin)
-- **gRPC** (`Grpc.AspNetCore`) in `AH.IdentityService`
+- **gRPC** (`Grpc.AspNetCore`) in `AH.IdentityService` (HTTP/2-only endpoints, `http` launch profile). gRPC client addresses use an explicit scheme (`http://ah-identityservice`): `GrpcChannel` throws on Aspire's `https+http://` scheme ("No address resolver configured"); the host is still resolved by service discovery on the client's HttpClient
 - **Microsoft Orleans**: `Microsoft.Orleans.Sdk` (Grains.Abstractions, Grains), `Microsoft.Orleans.Server` (SiloHost), `Microsoft.Orleans.Client` (WebApi); localhost clustering for now
 - **PostgreSQL** via **EF Core + Npgsql**, provisioned with `AddPostgres(...).AddDatabase(...)` in the AppHost and consumed with `builder.AddNpgsqlDbContext<AppDbContext>(...)` (Aspire integration)
 - **HybridCache** (in-memory L1). Redis as L2 can be added later via Aspire without code changes
 - **FluentValidation**: request validation
 - **ProblemDetails** (RFC 9457) + global `IExceptionHandler` for error responses
-- **Observability**: `ILogger` structured logging + OpenTelemetry via ServiceDefaults → Aspire dashboard
-- **Auth**: not decided yet. Do not add auth scaffolding until it is designed (likely owned by `AH.IdentityService`)
+- **Observability**: Serilog (configured once in ServiceDefaults `AddSerilogDefaults()`, settings in each host's `Serilog` appsettings section, `writeToProviders` → OpenTelemetry → Aspire dashboard). Code injects `ILogger<T>` via constructor; only hosts and ServiceDefaults reference Serilog
+- **Auth**: external sign-in only (Google via `Microsoft.AspNetCore.Authentication.Google`, Yandex via `AspNet.Security.OAuth.Yandex`), handled in `AH.WebApi/Auth`. The session is an HttpOnly cookie (`astrahive.session`, SameSite=Lax); there are no JWTs and no local passwords. On `OnCreatingTicket` WebApi calls IdentityService `GetOrCreateUser` (users matched by email) and puts the internal user id in `NameIdentifier`. Endpoints: `GET /api/auth/login/{provider}?returnUrl=`, `GET /api/auth/me`, `POST /api/auth/logout`. Profile: `GET /api/profile` (fresh from IdentityService `GetUser`) and `PUT /api/profile` (`UpdateUserProfile`; WebApi then reissues the session cookie so `/api/auth/me` shows the new name). Provider sign-in only fills names that are still empty (`User.SyncFromProvider`): a user's own edits (`User.Rename`) always win; the avatar keeps syncing. OAuth callbacks (handled by the OAuth middleware) are `/auth/signin-{google,yandex}` on the WebApi origin: in development `https://localhost:7093/auth/signin-google` and `https://localhost:7093/auth/signin-yandex`. These are registered with the providers, so keep the port pinned (WebApi `https` launch profile, selected via `launchProfileName: "https"` in the AppHost). Credentials come from AppHost secret parameters (`google-client-id`, `google-client-secret`, `yandex-client-id`, `yandex-client-secret`) as `Authentication__{Google,Yandex}__{ClientId,ClientSecret}`.
 - **Messaging**: none. Services communicate synchronously over gRPC/HTTP with Aspire service discovery
 - **Frontend**: Vue 3, Vite 8, Node `^22.18 || >=24.12`
 - **Testing**: xUnit v3, WebApplicationFactory, Testcontainers.PostgreSql, Verify
@@ -134,16 +146,20 @@ tests/                     # Test projects go here (physical folder, to be creat
 
 ```
 tests/
-  AH.Application.Tests/      # Unit tests for domain + handler logic
-  AH.Grains.Tests/           # Grain tests with Orleans InProcessTestCluster
-  AH.WebApi.Tests/           # Integration tests: WebApplicationFactory + Testcontainers PostgreSQL
-    Fixtures/ApiFixture.cs
-    <Feature>/<Operation>Tests.cs
+  AH.Application.Tests/      # exists: domain + Application (validators, handlers against real PostgreSQL)
+    Fixtures/PostgresFixture.cs     # assembly fixture: one Testcontainers postgres:17, production migrations applied
+    Fixtures/DatabaseTestBase.cs    # base for DB tests: truncates tables per test, CreateDbContext()
+    Domain/<Aggregate>/<Entity>Tests.cs
+    <Feature>/<Operation>/<Handler|Validator>Tests.cs
+  AH.Grains.Tests/           # planned: grain tests with Orleans InProcessTestCluster
+  AH.WebApi.Tests/           # planned: integration tests with WebApplicationFactory + Testcontainers PostgreSQL
 ```
 
+- xUnit v3 on the VSTest adapter (`xunit.v3` + `xunit.runner.visualstudio`), so plain `dotnet test AstraHive.slnx` works. Assertions use xUnit `Assert`.
 - AAA pattern, one behavior per test, name: `Method_Scenario_ExpectedResult`.
-- Real PostgreSQL via Testcontainers: **never** the EF in-memory provider.
-- Use `FakeTimeProvider` for time-dependent logic.
+- Real PostgreSQL via Testcontainers: **never** the EF in-memory provider. DB test classes derive from `DatabaseTestBase` (one non-parallel `Database` collection) and use a fresh `AppDbContext` per act/assert.
+- Use `FakeTimeProvider` for time-dependent logic; pass `TestContext.Current.CancellationToken` to async calls.
+- Frontend: Vitest + Testing Library, specs co-located as `*.spec.js` (see `ah.webapp/CLAUDE.md`).
 
 ## Workflow
 
@@ -172,5 +188,6 @@ Do NOT generate code that:
 - Uses the EF in-memory provider for tests
 - Catches bare `Exception`: catch specific types, let the global handler catch the rest
 - Uses string interpolation in log messages: use structured message templates
+- References Serilog (or its static `Log`) outside host `Program.cs` / ServiceDefaults: inject `ILogger<T>`
 - Adds MediatR, AutoMapper, MassTransit v9+, or FluentAssertions v8+ (commercial licenses)
-- Scaffolds authentication before the auth design is decided
+- Puts OAuth client ids/secrets in appsettings or source; use the AppHost secret parameters

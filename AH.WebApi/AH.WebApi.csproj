@@ -11,7 +11,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Controllers\" />
+    <PackageReference Include="AspNet.Security.OAuth.Yandex" Version="10.0.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.36.2" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.84.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.84.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.13" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\AH.IdentityService\Protos\user_service.proto" GrpcServices="Client" Link="Protos\user_service.proto" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <SpaRoot>..\ah.webapp\</SpaRoot>
+  </PropertyGroup>
+
+  <!-- Release builds (and so `dotnet publish`) ship the production SPA bundle (vite build → wwwroot).
+       Debug skips it: under `aspire run` the ah-webapp resource keeps wwwroot current with build:watch. -->
+  <Target Name="BuildSpa" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm ci" Condition="!Exists('$(SpaRoot)node_modules')" />
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
+    <!-- wwwroot was globbed at evaluation, before vite emptied and refilled it: re-glob so static web
+         assets see the new hashed files instead of stale (now deleted) ones. A wildcard Remove inside a
+         target only matches files still on disk, so stale items are filtered by identity instead. -->
+    <ItemGroup>
+      <_StaleSpaContent Include="@(Content)" Condition="$([MSBuild]::ValueOrDefault('%(Content.Identity)', '').StartsWith('wwwroot\'))" />
+      <Content Remove="@(_StaleSpaContent)" />
+      <Content Include="wwwroot\**" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
 
 </Project>

@@ -18,6 +18,12 @@ const routes = [
         meta: { title: 'nav.signIn', requiresAuth: false },
     },
     {
+        path: '/welcome',
+        name: 'Welcome',
+        component: () => import('@/views/WelcomeView.vue'),
+        meta: { title: 'nav.welcome', requiresAuth: true },
+    },
+    {
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/DashboardView.vue'),
@@ -54,6 +60,12 @@ const routes = [
         meta: { title: 'nav.settings', requiresAuth: true, image: 'settings' },
     },
     {
+        path: '/profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/ProfileView.vue'),
+        meta: { title: 'nav.profile', requiresAuth: true },
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'NotFound',
         component: () => import('@/views/NotFoundView.vue'),
@@ -71,20 +83,22 @@ const router = createRouter({
     },
 });
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
     const authStore = useAuthStore();
+    await authStore.ensureInitialized();
 
     if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        return { name: 'Home' };
+        return { name: 'Login' };
     }
     if (authStore.isAuthenticated && ['Home', 'Login'].includes(to.name)) {
-        return { name: 'Dashboard' };
+        return { name: 'Welcome' };
     }
 });
 
 router.afterEach((to) => {
     const title = to.meta.title ? i18n.global.t(to.meta.title) : null;
-    document.title = title ? `${title} - AstraHive` : 'AstraHive';
+    const appName = i18n.global.t('app.name');
+    document.title = title ? `${title} - ${appName}` : appName;
 });
 
 export default router;

@@ -4,23 +4,30 @@ import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
 
-// Injected by Aspire service discovery when the AppHost references ah-webapi.
-const apiTarget =
-    process.env['services__ah-webapi__https__0'] ||
-    process.env['services__ah-webapi__http__0'];
-
+// There is no dev server: Aspire runs `npm run build:watch`, which rebuilds into AH.WebApi/wwwroot,
+// and AH.WebApi serves the SPA, so /api calls are same-origin with no proxy.
 // https://vite.dev/config/
 export default defineConfig({
-    plugins: [vue(), tailwindcss(), vueDevTools()],
+    plugins: [
+        // Absolute URLs (/brand/*.jpg) point at public/ and must stay plain URLs, not module imports.
+        vue({ template: { transformAssetUrls: { includeAbsolute: false } } }),
+        tailwindcss(),
+        // Devtools only make sense in the browser; skip them under Vitest.
+        ...(process.env.VITEST ? [] : [vueDevTools()]),
+    ],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
         },
     },
-    server: {
-        port: Number(process.env.PORT) || 57976,
-        proxy: apiTarget
-            ? { '/api': { target: apiTarget, changeOrigin: true, secure: false } }
-            : undefined,
+    build: {
+        // AH.WebApi serves the bundle from wwwroot (UseStaticFiles + MapFallbackToFile).
+        outDir: '../AH.WebApi/wwwroot',
+        emptyOutDir: true,
+    },
+    test: {
+        environment: 'jsdom',
+        setupFiles: ['./vitest.setup.js'],
+        include: ['src/**/*.spec.js'],
     },
 });

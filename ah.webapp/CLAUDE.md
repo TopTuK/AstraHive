@@ -406,37 +406,31 @@ src/
 
 ## Project-Specific Overrides
 
-### Rich text & auth (security)
+### Auth (Google / Yandex sign-in)
 
-- **Never use `v-html`.** Instructor-authored course/lesson HTML is rendered with the global
-  `v-safe-html` directive (`src/directives/vSafeHtml.js` → DOMPurify via `src/lib/sanitizeHtml.js`).
-  The server also sanitises on write (`LF.Application` `GanssHtmlSanitizer`); keep the two
-  allow-lists in sync. `eslint`'s `vue/no-v-html` stays enabled.
-- The session token is in an **HttpOnly cookie** — there is no `js-cookie` dependency. `api.js`
-  relies on `withCredentials`; auth state comes from `authStore.ensureInitialized()` (a `/Profile`
-  probe). A 401 response redirects to `/login` unless the caller passes `skipAuthRedirect`.
-- `index.html` must stay free of inline `<script>`/`<style>` — the prod CSP is `script-src 'self'`
-  plus `https://www.googletagmanager.com` (the theme bootstrap lives in `public/theme-init.js`).
+- The session is an **HttpOnly cookie** (`astrahive.session`) issued by `ah-webapi`; JS never sees a token.
+- Sign-in is a full-page navigation, not an XHR: `authStore.loginWith('google' | 'yandex')` →
+  `/api/auth/login/{provider}?returnUrl=/welcome` → provider → `/auth/signin-{provider}` → `returnUrl`.
+- HTTP goes through `src/services/api.js` (axios, `baseURL: '/api'`, `withCredentials`). A 401 redirects to
+  `/login` unless the request passes `skipAuthRedirect`. Endpoint wrappers live in `src/services/*Service.js`.
+- Auth state comes from `authStore.ensureInitialized()` (one `GET /api/auth/me` probe), awaited in the router
+  guard; `App.vue` renders a layout only once `authStore.initialized` is true.
+- Failed sign-ins land on `/login?error=email_required|access_denied|sign_in_failed` (`login.errors.*` i18n keys).
+- The app is served by **AH.WebApi** at `https://localhost:7093` from `AH.WebApi/wwwroot`. There is no Vite dev server:
+  `aspire run` runs `npm run build:watch` (rebuilds into wwwroot on change; refresh the browser, no HMR), production
+  uses `npm run build`. `/api` is same-origin, and the OAuth redirect URIs registered with Google/Yandex are on 7093.
+- Provider logos (`src/components/icons/`) keep their brand colors; that is the only allowed hardcoded color.
 
-### Analytics (Google Analytics 4)
+### Testing
 
-- `vue-gtag` is imported **only** by `src/lib/analytics.js`; everything else calls `track(name, params)`.
-  It sends nothing unless it's a production build (`import.meta.env.PROD`) **and** the user accepted
-  `AnalyticsConsentBanner` (choice in localStorage `leanforge-analytics-consent`, resettable on `/cookies`).
-- Page views strip the query string except `utm_*`/`gclid` (Robokassa's signed return params must never
-  reach Google). Never send user id, email or name — only the `role` user property.
-- New GA hosts need matching `script-src`/`connect-src` entries in the prod CSP in `LF.WebApi/Program.cs`.
-  Any new cookie/tracking use must also be reflected in the `cookies.*` policy text (en + ru).
-
-### Testing (actual setup)
-
-- Runner: **Vitest** (`vite.config.js` `test` block, `jsdom`, `globals: true`, `vitest.setup.js`).
-- Component tests use **`@testing-library/vue`** + `@testing-library/user-event`; `@testing-library/jest-dom` matchers.
-- Specs are **co-located** as `*.spec.js` next to the file under test. `src/test/renderComponent.js` wraps `render` with the real `@/i18n` instance (locale forced to `en`) and an optional `@pinia/testing` Pinia.
-- Pinia stores: `setActivePinia(createPinia())` + `vi.mock` the service modules. `authStore` calls `useRouter()` at setup — `vi.mock('vue-router')` when testing it directly.
-- `vitest.setup.js` polyfills `URL.createObjectURL`/`revokeObjectURL` and `matchMedia` (jsdom lacks them; `theme/index.js` and several stores/services use them at import/runtime).
-- Scripts: `npm test` (run once), `npm run test:watch`, `npm run test:coverage`, `npm run lint:ci` (eslint, no `--fix`).
-- CI: `.github/workflows/webapp-tests.yml` runs lint + test + build on PRs to `main` touching `lf.webapp/**`.
+- **Vitest** (`test` block in `vite.config.js`, `jsdom`, setup in `vitest.setup.js`) + **`@testing-library/vue`**,
+  `@testing-library/user-event` and `@testing-library/jest-dom` matchers. Scripts: `npm test`, `npm run test:watch`.
+- Specs are co-located as `*.spec.js` next to the file under test and import `describe/it/expect/vi` from `vitest` (no globals).
+- Components: render through `src/test/renderWithPlugins.js` (real `@/i18n` forced to `en`, fresh Pinia, memory router;
+  pass `route` for query-dependent views). Query by role/text the user sees, not by class names.
+- Stores and the router guard: `setActivePinia(createPinia())` per test and `vi.mock('@/services/<name>Service')`;
+  never hit the network.
+- `vitest.setup.js` polyfills `matchMedia` and `scrollTo` (jsdom lacks them).
 
 <!--
 Customize this section for your specific project. Examples:

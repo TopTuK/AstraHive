@@ -1,7 +1,27 @@
 <script setup>
-import { ArrowLeft, LockKeyhole } from 'lucide-vue-next';
+import { ArrowLeft, CircleAlert, LockKeyhole } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import AppLogo from '@/components/layout/AppLogo.vue';
+import GoogleIcon from '@/components/icons/GoogleIcon.vue';
+import YandexIcon from '@/components/icons/YandexIcon.vue';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/stores/authStore';
+
+const PROVIDERS = [
+  { id: 'google', label: 'login.google', icon: GoogleIcon },
+  { id: 'yandex', label: 'login.yandex', icon: YandexIcon },
+];
+const KNOWN_ERRORS = ['email_required', 'access_denied', 'sign_in_failed'];
+
+const route = useRoute();
+const authStore = useAuthStore();
+
+const errorKey = computed(() => {
+  const error = route.query.error;
+  if (!error) return null;
+  return KNOWN_ERRORS.includes(error) ? `login.errors.${error}` : 'login.errors.sign_in_failed';
+});
 </script>
 
 <template>
@@ -32,9 +52,40 @@ import { Button } from '@/components/ui/button';
           <p class="text-sm leading-relaxed text-muted-foreground">
             {{ $t('login.text') }}
           </p>
+
+          <p
+            v-if="errorKey"
+            role="alert"
+            class="flex w-full items-start gap-2 rounded-sm border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <CircleAlert
+              class="mt-0.5 size-4 shrink-0"
+              aria-hidden="true"
+            />
+            {{ $t(errorKey) }}
+          </p>
+
+          <div class="flex w-full flex-col gap-2">
+            <Button
+              v-for="provider in PROVIDERS"
+              :key="provider.id"
+              variant="outline"
+              class="w-full justify-center"
+              @click="authStore.loginWith(provider.id)"
+            >
+              <component
+                :is="provider.icon"
+                class="size-4"
+                aria-hidden="true"
+              />
+              {{ $t(provider.label) }}
+            </Button>
+          </div>
+
           <Button
             as-child
-            variant="outline"
+            variant="ghost"
+            size="sm"
           >
             <RouterLink :to="{ name: 'Home' }">
               <ArrowLeft aria-hidden="true" />

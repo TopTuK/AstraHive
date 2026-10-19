@@ -5,6 +5,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import './main.css';
 
+import { VueQueryPlugin } from '@tanstack/vue-query';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
 import App from './App.vue';
@@ -18,10 +19,11 @@ setLocale(i18n.global.locale.value);
 const app = createApp(App);
 
 app.config.errorHandler = (error, _instance, info) => {
-    console.error(`[AstraHive] Unhandled error (${info})`, error);
+    console.error(`[Astra Hive] Unhandled error (${info})`, error);
 };
 
 app.use(createPinia());
+app.use(VueQueryPlugin);
 app.use(i18n);
 app.use(router);
 

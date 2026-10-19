@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "AstraHive",
+    "name": "Astra Hive",
     "tagline": "Virtual machine orchestration"
   },
   "nav": {
@@ -16,7 +16,9 @@
     "settings": "Settings",
     "mainNavigation": "Main navigation",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "welcome": "Welcome",
+    "profile": "Profile"
   },
   "sidebar": {
     "orchestration": "Orchestration",
@@ -44,7 +46,7 @@
       "eyebrow": "VM orchestration // SSH",
       "title": "Operate your virtual machines",
       "titleAccent": "from one console",
-      "subtitle": "AstraHive connects to your virtual machines over SSH so you can run maintenance operations, group machines into clusters and schedule recurring tasks without juggling terminals.",
+      "subtitle": "Astra Hive connects to your virtual machines over SSH so you can run maintenance operations, group machines into clusters and schedule recurring tasks without juggling terminals.",
       "ctaPrimary": "Sign in",
       "ctaSecondary": "See how it works",
       "status": "Early preview",
@@ -77,7 +79,7 @@
       },
       "tasks": {
         "title": "Scheduled tasks",
-        "text": "Define recurring tasks once and let AstraHive execute them on schedule against a machine or a whole cluster."
+        "text": "Define recurring tasks once and let Astra Hive execute them on schedule against a machine or a whole cluster."
       },
       "audit": {
         "title": "Run history",
@@ -107,15 +109,22 @@
     }
   },
   "footer": {
-    "rights": "AstraHive",
+    "rights": "Astra Hive",
     "description": "Virtual machine orchestration over SSH."
   },
   "login": {
     "label": "Access",
-    "title": "Sign in to AstraHive",
-    "text": "Authentication is not configured yet. Sign-in will be available once the identity service is in place.",
+    "title": "Sign in to Astra Hive",
+    "text": "Use your Google or Yandex account. An Astra Hive account is created automatically on first sign-in.",
     "back": "Back to home",
-    "imageAlt": "A server secured by a hexagonal lock"
+    "imageAlt": "A server secured by a hexagonal lock",
+    "google": "Continue with Google",
+    "yandex": "Continue with Yandex",
+    "errors": {
+      "email_required": "The provider did not share your email address. Allow access to your email and try again.",
+      "access_denied": "Sign-in was cancelled.",
+      "sign_in_failed": "Sign-in failed. Please try again."
+    }
   },
   "notFound": {
     "title": "Page not found",
@@ -150,5 +159,35 @@
     "stopped": "Stopped",
     "error": "Error",
     "pending": "Pending"
+  },
+  "welcome": {
+    "badge": "Under development",
+    "greeting": "Welcome, {name}!",
+    "greetingAnonymous": "Welcome!",
+    "text": "Astra Hive is under active development. You are signed in, and the console features will appear here as soon as they are ready.",
+    "upcoming": "Coming soon",
+    "soon": "Soon"
+  },
+  "profile": {
+    "label": "Account",
+    "title": "Your profile",
+    "description": "Change how your name appears across Astra Hive.",
+    "email": "Email",
+    "emailHint": "Your email comes from your sign-in provider and can't be changed.",
+    "memberSince": "Member since",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "reset": "Reset",
+    "saved": "Profile saved.",
+    "loading": "Loading profile...",
+    "errors": {
+      "firstNameRequired": "Enter your first name.",
+      "tooLong": "Use at most {max} characters.",
+      "saveFailed": "Couldn't save your profile. Please try again.",
+      "loadFailed": "Couldn't load your profile.",
+      "retry": "Try again"
+    }
   }
 }

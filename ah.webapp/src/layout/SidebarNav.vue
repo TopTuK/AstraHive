@@ -1,6 +1,7 @@
 <script setup>
 import {
   CalendarClock,
+  Construction,
   LayoutDashboard,
   Network,
   Server,
@@ -20,6 +21,7 @@ const SECTIONS = [
   {
     label: 'sidebar.orchestration',
     items: [
+      { name: 'Welcome', label: 'nav.welcome', icon: Construction },
       { name: 'Dashboard', label: 'nav.dashboard', icon: LayoutDashboard },
       { name: 'Clusters', label: 'nav.clusters', icon: Network },
       { name: 'Machines', label: 'nav.machines', icon: Server },

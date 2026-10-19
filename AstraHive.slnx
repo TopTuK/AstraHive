@@ -13,7 +13,9 @@
       <Deploy />
     </Project>
   </Folder>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/AH.Application.Tests/AH.Application.Tests.csproj" />
+  </Folder>
   <Project Path="AstraHive.AppHost/AstraHive.AppHost.csproj" />
   <Project Path="AstraHive.ServiceDefaults/AstraHive.ServiceDefaults.csproj" />
 </Solution>

@@ -1,7 +1,7 @@
 <script setup>
 import { LogOut, Menu, UserRound } from 'lucide-vue-next';
 import { ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import AppLogo from '@/components/layout/AppLogo.vue';
 import LocaleSwitcher from '@/components/layout/LocaleSwitcher.vue';
 import ThemeToggle from '@/components/layout/ThemeToggle.vue';
@@ -20,8 +20,17 @@ import { useAuthStore } from '@/stores/authStore';
 import SidebarNav from './SidebarNav.vue';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const isMobileNavOpen = ref(false);
+
+async function signOut() {
+  try {
+    await authStore.logout();
+  } finally {
+    await router.push({ name: 'Home' });
+  }
+}
 </script>
 
 <template>
@@ -75,7 +84,17 @@ const isMobileNavOpen = ref(false);
             size="sm"
             :aria-label="$t('header.userMenu')"
           >
-            <UserRound aria-hidden="true" />
+            <img
+              v-if="authStore.user?.avatarUrl"
+              :src="authStore.user.avatarUrl"
+              alt=""
+              referrerpolicy="no-referrer"
+              class="size-5 rounded-full object-cover"
+            />
+            <UserRound
+              v-else
+              aria-hidden="true"
+            />
             <span class="hidden max-w-32 truncate sm:inline">{{ authStore.user?.name }}</span>
           </Button>
         </DropdownMenuTrigger>
@@ -86,12 +105,12 @@ const isMobileNavOpen = ref(false);
           <DropdownMenuLabel class="mono-label text-muted-foreground">
             {{ $t('header.account') }}
           </DropdownMenuLabel>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem @select="router.push({ name: 'Profile' })">
             <UserRound aria-hidden="true" />
             {{ $t('header.profile') }}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem @select="signOut">
             <LogOut aria-hidden="true" />
             {{ $t('header.signOut') }}
           </DropdownMenuItem>
