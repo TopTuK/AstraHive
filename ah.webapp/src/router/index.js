@@ -54,6 +54,12 @@ const routes = [
         meta: { title: 'nav.tasks', requiresAuth: true, image: 'tasks' },
     },
     {
+        path: '/workspace/members',
+        name: 'WorkspaceMembers',
+        component: () => import('@/views/workspace/WorkspaceMembersView.vue'),
+        meta: { title: 'nav.members', requiresAuth: true },
+    },
+    {
         path: '/settings',
         name: 'Settings',
         component: PlaceholderView,

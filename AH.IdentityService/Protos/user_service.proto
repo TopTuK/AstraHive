@@ -9,7 +9,8 @@ package user_service;
 
 // The User service definition
 service UserServiceRpc {
-  // Get or create user (matched by email) after a successful external sign-in
+  // Get or create user (matched by email) after a successful sign-in. Fails with PERMISSION_DENIED and an
+  // "error-code" trailer (SignInErrors in AH.Application) when the sign-in rules reject it.
   rpc GetOrCreateUser (GetUserRequest) returns (GetUserReply);
   // Get a user by internal id
   rpc GetUser (GetUserByIdRequest) returns (GetUserReply);
@@ -17,11 +18,21 @@ service UserServiceRpc {
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (GetUserReply);
 }
 
+enum SignInMethod {
+  SIGN_IN_METHOD_UNSPECIFIED = 0;
+  // Google or Yandex
+  SIGN_IN_METHOD_EXTERNAL = 1;
+  SIGN_IN_METHOD_CERTIFICATE = 2;
+}
+
 message GetUserRequest {
   string email = 1;
   string first_name = 2;
   google.protobuf.StringValue last_name = 3;
   google.protobuf.StringValue avatar_url = 4;
+  SignInMethod sign_in_method = 5;
+  // SHA-256 of the client certificate (hex); required for SIGN_IN_METHOD_CERTIFICATE.
+  google.protobuf.StringValue certificate_thumbprint = 6;
 }
 
 message GetUserByIdRequest {

@@ -3,6 +3,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-vue-next';
 import AppLogo from '@/components/layout/AppLogo.vue';
 import { cn } from '@/lib/utils';
 import SidebarNav from './SidebarNav.vue';
+import WorkspaceSwitcher from './WorkspaceSwitcher.vue';
 
 const isCollapsed = defineModel('collapsed', { type: Boolean, default: false });
 </script>
@@ -23,6 +24,8 @@ const isCollapsed = defineModel('collapsed', { type: Boolean, default: false });
     >
       <AppLogo :show-wordmark="!isCollapsed" />
     </RouterLink>
+
+    <WorkspaceSwitcher v-if="!isCollapsed" />
 
     <div class="flex-1 overflow-y-auto">
       <SidebarNav :is-collapsed="isCollapsed" />

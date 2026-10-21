@@ -56,7 +56,7 @@ public sealed class ProfileController(UserServiceRpc.UserServiceRpcClient users)
         }
         catch (RpcException ex) when (ex.StatusCode == GrpcStatusCode.InvalidArgument)
         {
-            return Problem(title: "Invalid profile", detail: ex.Status.Detail, statusCode: StatusCodes.Status400BadRequest);
+            return this.ToProblem(ex, "Invalid profile");
         }
         catch (RpcException ex) when (ex.StatusCode == GrpcStatusCode.NotFound)
         {

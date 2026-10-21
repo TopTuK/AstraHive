@@ -1,4 +1,5 @@
 using AH.Application;
+using AH.IdentityService;
 using AH.IdentityService.Services;
 using AH.Infrastructure;
 using AH.Infrastructure.Persistence;
@@ -15,6 +16,7 @@ try
 
     builder.AddServiceDefaults();
 
+    builder.AddFeatureFlagClient();
     builder.Services.AddApplication();
     builder.AddInfrastructure();
 
@@ -31,11 +33,16 @@ try
         await db.Database.MigrateAsync();
     }
 
+    // Every start, in every environment: idempotent, and the deployment's only way to get a first user.
+    await app.EnsureGlobalAdministratorAsync(app.Lifetime.ApplicationStopping);
+
     app.MapDefaultEndpoints();
 
     app.UseSerilogRequestLogging();
 
     app.MapGrpcService<RpcUserService>();
+    app.MapGrpcService<RpcWorkspaceService>();
+    app.MapGrpcService<RpcCertificateService>();
 
     app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 

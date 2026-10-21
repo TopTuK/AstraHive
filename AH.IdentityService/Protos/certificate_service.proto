@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+option csharp_namespace = "AH.IdentityService";
+
+import "google/protobuf/timestamp.proto";
+
+package certificate_service;
+
+// Client certificates of main-workspace members. Only the Global Administrator (requester_id) may call these;
+// other members get PERMISSION_DENIED, non-members NOT_FOUND.
+service CertificateServiceRpc {
+  // Issue a certificate; the reply carries the PFX password, which is never returned again
+  rpc IssueCertificate (UserCertificatesRequest) returns (IssueCertificateReply);
+  // A member's certificates, newest first
+  rpc GetUserCertificates (UserCertificatesRequest) returns (CertificateListReply);
+  // The PFX as issued (opens with the password shown at issuance)
+  rpc DownloadCertificate (CertificateRequest) returns (CertificateFileReply);
+  // Revoke: the certificate no longer signs in and its PFX is deleted
+  rpc RevokeCertificate (CertificateRequest) returns (CertificateListReply);
+}
+
+message UserCertificatesRequest {
+  int32 workspace_id = 1;
+  int32 requester_id = 2;
+  int32 user_id = 3;
+}
+
+message CertificateRequest {
+  int32 workspace_id = 1;
+  int32 requester_id = 2;
+  int32 user_id = 3;
+  int32 certificate_id = 4;
+}
+
+message Certificate {
+  int32 id = 1;
+  int32 user_id = 2;
+  string thumbprint = 3;
+  string serial_number = 4;
+  google.protobuf.Timestamp not_before = 5;
+  google.protobuf.Timestamp not_after = 6;
+  google.protobuf.Timestamp issued_at = 7;
+  google.protobuf.Timestamp revoked_at = 8;
+  // False for revoked certificates and the bootstrap certificate (not stored by the product).
+  bool can_download = 9;
+}
+
+message IssueCertificateReply {
+  Certificate certificate = 1;
+  string password = 2;
+}
+
+message CertificateListReply {
+  repeated Certificate certificates = 1;
+}
+
+message CertificateFileReply {
+  string file_name = 1;
+  bytes content = 2;
+}

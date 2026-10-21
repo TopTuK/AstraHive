@@ -1,3 +1,12 @@
+using AH.AppDomain.Users;
+
 namespace AH.Application.Users.GetOrCreateUser;
 
-public sealed record GetOrCreateUserCommand(string Email, string FirstName, string LastName, string? AvatarUrl);
+// CertificateThumbprint is required for SignInMethod.Certificate (SHA-256, hex).
+public sealed record GetOrCreateUserCommand(
+    string Email,
+    string FirstName,
+    string LastName,
+    string? AvatarUrl,
+    SignInMethod Method = SignInMethod.External,
+    string? CertificateThumbprint = null);

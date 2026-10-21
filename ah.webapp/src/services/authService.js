@@ -10,3 +10,8 @@ export const loginUrl = (provider, returnUrl) => {
     const query = returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : '';
     return `/api/auth/login/${encodeURIComponent(provider)}${query}`;
 };
+
+// What the login page offers (external providers allowed by the ah.external_login flag, certificate
+// sign-in, registration). Anonymous, so it never triggers the sign-in redirect.
+export const fetchSignInOptions = () =>
+    api.get('/auth/options', { skipAuthRedirect: true }).then((response) => response.data);

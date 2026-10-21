@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+option csharp_namespace = "AH.IdentityService";
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+package workspace_service;
+
+// Workspaces and their members. requester_id is the signed-in user (set by WebApi from the session
+// cookie); every call checks the requester's membership and role in the workspace.
+service WorkspaceServiceRpc {
+  // Workspaces the user belongs to, with the user's role in each
+  rpc GetMyWorkspaces (GetMyWorkspacesRequest) returns (WorkspaceListReply);
+  // Create a workspace with the user as its Administrator (only while ah.registration_enabled is on)
+  rpc CreateWorkspace (CreateWorkspaceRequest) returns (WorkspaceSummary);
+  // Members of a workspace (any member may read)
+  rpc GetWorkspaceMembers (WorkspaceMembersRequest) returns (WorkspaceMembersReply);
+  // Add a member by email; an email that never signed in becomes a pending user (administrators only)
+  rpc AddWorkspaceMember (AddWorkspaceMemberRequest) returns (WorkspaceMembersReply);
+  // Change a member's role (administrators only; the last administrator and the Global Administrator cannot be demoted)
+  rpc ChangeWorkspaceMemberRole (ChangeWorkspaceMemberRoleRequest) returns (WorkspaceMembersReply);
+  // Remove a member (administrators only; the last administrator and the Global Administrator cannot be removed)
+  rpc RemoveWorkspaceMember (RemoveWorkspaceMemberRequest) returns (WorkspaceMembersReply);
+}
+
+enum WorkspaceRole {
+  WORKSPACE_ROLE_UNSPECIFIED = 0;
+  WORKSPACE_ROLE_ADMINISTRATOR = 1;
+  WORKSPACE_ROLE_VIEWER = 2;
+}
+
+message GetMyWorkspacesRequest {
+  int32 user_id = 1;
+}
+
+message CreateWorkspaceRequest {
+  int32 requester_id = 1;
+  string name = 2;
+}
+
+message WorkspaceMembersRequest {
+  int32 workspace_id = 1;
+  int32 requester_id = 2;
+}
+
+message AddWorkspaceMemberRequest {
+  int32 workspace_id = 1;
+  int32 requester_id = 2;
+  string email = 3;
+  WorkspaceRole role = 4;
+}
+
+message ChangeWorkspaceMemberRoleRequest {
+  int32 workspace_id = 1;
+  int32 requester_id = 2;
+  int32 user_id = 3;
+  WorkspaceRole role = 4;
+}
+
+message RemoveWorkspaceMemberRequest {
+  int32 workspace_id = 1;
+  int32 requester_id = 2;
+  int32 user_id = 3;
+}
+
+message WorkspaceSummary {
+  int32 id = 1;
+  string name = 2;
+  WorkspaceRole role = 3;
+  int32 member_count = 4;
+  // The Global Administrator's workspace (operators only, no clusters).
+  bool is_main = 5;
+}
+
+message WorkspaceListReply {
+  repeated WorkspaceSummary workspaces = 1;
+}
+
+message WorkspaceMember {
+  int32 user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  google.protobuf.StringValue avatar_url = 5;
+  WorkspaceRole role = 6;
+  // Added by email but not signed in yet.
+  bool is_pending = 7;
+  google.protobuf.Timestamp added_at = 8;
+  // The Global Administrator of the main workspace: role fixed, cannot be removed.
+  bool is_global_administrator = 9;
+}
+
+// Canonical reply of every member operation: the workspace's members after the change.
+message WorkspaceMembersReply {
+  int32 id = 1;
+  string name = 2;
+  // UNSPECIFIED when the requester just removed themselves.
+  WorkspaceRole your_role = 3;
+  repeated WorkspaceMember members = 4;
+  bool is_main = 5;
+  // The requester is the Global Administrator and may issue client certificates to members.
+  bool can_manage_certificates = 6;
+}

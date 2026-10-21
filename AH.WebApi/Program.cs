@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using AH.WebApi.Auth;
 using Serilog;
 
@@ -11,9 +12,12 @@ try
 
     builder.AddServiceDefaults();
 
-    builder.Services.AddControllers();
+    // Enums (workspace roles) travel as their names, which the SPA reads and sends.
+    builder.Services.AddControllers()
+        .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     builder.Services.AddProblemDetails();
 
+    builder.AddFeatureFlagClient();
     builder.AddAstraHiveAuthentication();
 
     var app = builder.Build();

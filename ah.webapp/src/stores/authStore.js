@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import * as authService from '@/services/authService';
+import { useWorkspaceStore } from './workspaceStore';
 
 // Session lives in an HttpOnly cookie issued by ah-webapi after Google/Yandex sign-in;
 // the store only mirrors who the cookie belongs to.
@@ -37,6 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
             await authService.logout();
         } finally {
             user.value = null;
+            useWorkspaceStore().clear();
         }
     };
 

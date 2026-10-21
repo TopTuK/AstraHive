@@ -22,6 +22,8 @@
 
   <ItemGroup>
 	<Protobuf Include="Protos\user_service.proto" GrpcServices="Server" />
+	<Protobuf Include="Protos\workspace_service.proto" GrpcServices="Server" />
+	<Protobuf Include="Protos\certificate_service.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

@@ -13,11 +13,32 @@
     <ProjectReference Include="..\AH.IdentityService\AH.IdentityService.csproj" />
     <ProjectReference Include="..\AH.SiloHost\AH.SiloHost.csproj" />
     <ProjectReference Include="..\AH.WebApi\AH.WebApi.csproj" />
+    <!-- Build-order only: the tool runs from EnsureDevCertificates, it is neither referenced nor an Aspire resource. -->
+    <ProjectReference Include="..\tools\AH.CertTool\AH.CertTool.csproj" ReferenceOutputAssembly="false" IsAspireProjectResource="false" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.6.1" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.6.1" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Minio" Version="13.5.0" />
+    <!-- The MinIO hosting package pins 2.5.302 (GHSA-qhrr-8q5h-9q3h); 2.5.303+ is patched. -->
+    <PackageReference Include="MessagePack" Version="2.5.307" />
   </ItemGroup>
+
+  <!-- Certificate sign-in (development): a per-machine root CA plus the Global Administrator's client certificate,
+       installed into CurrentUser\My (AH.CertTool dev). Runs once; delete the folder and rebuild to regenerate.
+       AppHost.cs hands the root's public PEM to AH.WebApi, and the root key plus the administrator's public
+       certificate to AH.IdentityService. Must match devCertsDir and the global-admin-email default in AppHost.cs. -->
+  <PropertyGroup>
+    <DevCertsDir>$(LOCALAPPDATA)\AstraHive\dev-certs</DevCertsDir>
+    <DevCertsDir Condition="'$(LOCALAPPDATA)' == ''">$(HOME)/.local/share/AstraHive/dev-certs</DevCertsDir>
+    <DevCertUserEmail Condition="'$(DevCertUserEmail)' == ''">admin@astrahive.local</DevCertUserEmail>
+    <DevCertUserName Condition="'$(DevCertUserName)' == ''">Global Admin</DevCertUserName>
+    <DevCertsTool>$(MSBuildThisFileDirectory)..\tools\AH.CertTool\bin\$(Configuration)\$(TargetFramework)\AH.CertTool.dll</DevCertsTool>
+  </PropertyGroup>
+
+  <Target Name="EnsureDevCertificates" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug' AND '$(CI)' != 'true' AND (!Exists('$(DevCertsDir)/root.pem') OR !Exists('$(DevCertsDir)/root.key.pem') OR !Exists('$(DevCertsDir)/$(DevCertUserEmail).pfx') OR !Exists('$(DevCertsDir)/$(DevCertUserEmail).pem'))">
+    <Exec Command="dotnet &quot;$(DevCertsTool)&quot; dev --out &quot;$(DevCertsDir)&quot; --email &quot;$(DevCertUserEmail)&quot; --name &quot;$(DevCertUserName)&quot;" />
+  </Target>
 
 </Project>

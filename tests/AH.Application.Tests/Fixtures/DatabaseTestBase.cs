@@ -13,7 +13,7 @@ public abstract class DatabaseTestBase(PostgresFixture database) : IAsyncLifetim
     public async ValueTask InitializeAsync()
     {
         await using var db = CreateDbContext();
-        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE users RESTART IDENTITY CASCADE;");
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE user_certificates, workspace_members, workspaces, users RESTART IDENTITY CASCADE;");
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

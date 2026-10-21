@@ -1,21 +1,44 @@
 <script setup>
-import { ArrowLeft, CircleAlert, LockKeyhole } from 'lucide-vue-next';
+import { ArrowLeft, CircleAlert, KeyRound, LockKeyhole } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import AppLogo from '@/components/layout/AppLogo.vue';
 import GoogleIcon from '@/components/icons/GoogleIcon.vue';
 import YandexIcon from '@/components/icons/YandexIcon.vue';
 import { Button } from '@/components/ui/button';
+import { useSignInOptions } from '@/composables/useSignInOptions';
 import { useAuthStore } from '@/stores/authStore';
 
-const PROVIDERS = [
+const EXTERNAL_PROVIDERS = [
   { id: 'google', label: 'login.google', icon: GoogleIcon },
   { id: 'yandex', label: 'login.yandex', icon: YandexIcon },
 ];
-const KNOWN_ERRORS = ['email_required', 'access_denied', 'sign_in_failed'];
+// Hops to the certificate login port, where the browser asks which client certificate to use.
+const CERTIFICATE_PROVIDER = { id: 'certificate', label: 'login.certificate', icon: KeyRound };
+const KNOWN_ERRORS = [
+  'email_required',
+  'email_invalid',
+  'email_unverified',
+  'access_denied',
+  'sign_in_failed',
+  'certificate_required',
+  'certificate_invalid',
+  'certificate_unavailable',
+  'certificate_unknown',
+  'external_login_disabled',
+  'registration_disabled',
+];
 
 const route = useRoute();
 const authStore = useAuthStore();
+const { data: options } = useSignInOptions();
+
+// Google/Yandex appear only when the server allows them (ah.external_login); the certificate is always
+// offered, also while the options load or if they fail, because it is the default way in.
+const externalProviders = computed(() =>
+  EXTERNAL_PROVIDERS.filter((provider) => options.value?.externalProviders?.includes(provider.id)),
+);
+const providers = computed(() => [...externalProviders.value, CERTIFICATE_PROVIDER]);
 
 const errorKey = computed(() => {
   const error = route.query.error;
@@ -50,7 +73,10 @@ const errorKey = computed(() => {
             {{ $t('login.title') }}
           </h1>
           <p class="text-sm leading-relaxed text-muted-foreground">
-            {{ $t('login.text') }}
+            {{ externalProviders.length ? $t('login.textExternal') : $t('login.text') }}
+            <template v-if="externalProviders.length && options?.registration">
+              {{ $t('login.registration') }}
+            </template>
           </p>
 
           <p
@@ -67,7 +93,7 @@ const errorKey = computed(() => {
 
           <div class="flex w-full flex-col gap-2">
             <Button
-              v-for="provider in PROVIDERS"
+              v-for="provider in providers"
               :key="provider.id"
               variant="outline"
               class="w-full justify-center"

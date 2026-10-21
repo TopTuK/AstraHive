@@ -15,7 +15,13 @@ public sealed class User
     public string? AvatarUrl { get; private set; }
     public string? PreferredLanguage { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
-    public DateTimeOffset LastLoginAt { get; private set; }
+    // Null while the user is pending: added to a workspace by email but not signed in yet.
+    public DateTimeOffset? LastLoginAt { get; private set; }
+    // The one user created at deployment (EnsureGlobalAdministrator): signs in with a certificate only and
+    // keeps the Administrator role of the main workspace for good.
+    public bool IsGlobalAdministrator { get; private set; }
+
+    public bool IsPending => LastLoginAt is null;
 
     public static User Create(string email, string firstName, string lastName, string? avatarUrl, DateTimeOffset now)
     {
@@ -28,6 +34,23 @@ public sealed class User
         user.RecordLogin(now);
         return user;
     }
+
+    public static User CreatePending(string email, DateTimeOffset now) => new()
+    {
+        Email = NormalizeEmail(email),
+        CreatedAt = now,
+    };
+
+    // Pending until the first certificate sign-in, like a member added by email.
+    public static User CreateGlobalAdministrator(string email, string firstName, string lastName, DateTimeOffset now)
+    {
+        var user = CreatePending(email, now);
+        user.SyncFromProvider(firstName, lastName, avatarUrl: null);
+        user.IsGlobalAdministrator = true;
+        return user;
+    }
+
+    public void PromoteToGlobalAdministrator() => IsGlobalAdministrator = true;
 
     public static string NormalizeEmail(string email)
     {

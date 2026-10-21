@@ -7,6 +7,7 @@ import {
   Server,
   Settings,
   SquareTerminal,
+  Users,
 } from 'lucide-vue-next';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,7 @@ const SECTIONS = [
   {
     label: 'sidebar.system',
     items: [
+      { name: 'WorkspaceMembers', label: 'nav.members', icon: Users },
       { name: 'Settings', label: 'nav.settings', icon: Settings },
     ],
   },

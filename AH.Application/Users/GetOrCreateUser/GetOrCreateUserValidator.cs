@@ -11,5 +11,7 @@ public sealed class GetOrCreateUserValidator : AbstractValidator<GetOrCreateUser
         RuleFor(c => c.FirstName).MaximumLength(User.NameMaxLength);
         RuleFor(c => c.LastName).MaximumLength(User.NameMaxLength);
         RuleFor(c => c.AvatarUrl).MaximumLength(User.AvatarUrlMaxLength);
+        RuleFor(c => c.Method).IsInEnum();
+        RuleFor(c => c.CertificateThumbprint).NotEmpty().When(c => c.Method == SignInMethod.Certificate);
     }
 }

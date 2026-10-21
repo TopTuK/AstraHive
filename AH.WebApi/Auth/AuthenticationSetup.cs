@@ -1,10 +1,15 @@
+using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using AH.IdentityService;
 using AspNet.Security.OAuth.Yandex;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace AH.WebApi.Auth;
@@ -21,6 +26,8 @@ public static class AuthenticationSetup
 
     public const string SignInLogCategory = "AH.WebApi.Auth.ExternalSignIn";
 
+    private static readonly Uri IdentityServiceAddress = new("http://ah-identityservice");
+
     public static IHostApplicationBuilder AddAstraHiveAuthentication(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -29,8 +36,12 @@ public static class AuthenticationSetup
         // GrpcChannel rejects Aspire's "https+http" scheme (no address resolver), so the scheme is explicit;
         // the host is still resolved by the service-discovery handler on the client's HttpClient. IdentityService
         // runs its "http" launch profile with HTTP/2-only endpoints, so this is h2c.
-        services.AddGrpcClient<UserServiceRpc.UserServiceRpcClient>(o => o.Address = new Uri("http://ah-identityservice"));
+        services.AddGrpcClient<UserServiceRpc.UserServiceRpcClient>(o => o.Address = IdentityServiceAddress);
+        services.AddGrpcClient<WorkspaceServiceRpc.WorkspaceServiceRpcClient>(o => o.Address = IdentityServiceAddress);
+        services.AddGrpcClient<CertificateServiceRpc.CertificateServiceRpcClient>(o => o.Address = IdentityServiceAddress);
+        services.AddTransient<SignInProvisioner>();
         services.AddTransient<ExternalUserProvisioner>();
+        services.AddTransient<CertificateSignIn>();
 
         var authentication = services
             .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -66,6 +77,9 @@ public static class AuthenticationSetup
                 options.ClientSecret = google["ClientSecret"]!;
                 options.CallbackPath = GoogleCallbackPath;
                 options.ClaimActions.MapJsonKey(AstraHiveClaimTypes.Picture, "picture");
+                // A Google account can carry an address it never verified; such sign-ins are rejected.
+                options.ClaimActions.MapCustomJson(AstraHiveClaimTypes.EmailVerified, user =>
+                    user.TryGetProperty("email_verified", out var verified) && verified.ValueKind == JsonValueKind.False ? "false" : "true");
                 ConfigureRemote(options);
             });
         }
@@ -90,9 +104,60 @@ public static class AuthenticationSetup
             });
         }
 
+        var certificateLogin = CertificateLoginOptions.From(configuration);
+        services.Configure<CertificateLoginOptions>(configuration.GetSection(CertificateLoginOptions.SectionName));
+        if (certificateLogin.IsEnabled)
+        {
+            AddCertificateLogin(services, authentication, certificateLogin);
+        }
+
         services.AddAuthorization();
 
         return builder;
+    }
+
+    private static void AddCertificateLogin(IServiceCollection services, AuthenticationBuilder authentication, CertificateLoginOptions login)
+    {
+        var root = login.LoadRootCertificate();
+        var loginPort = login.LoginPort!.Value;
+
+        services.Configure<KestrelServerOptions>(kestrel => kestrel.ConfigureHttpsDefaults(https =>
+        {
+            // Allow (not Require): a cancelled certificate picker must still reach the endpoint, which then
+            // redirects back with certificate_required instead of failing the TLS handshake.
+            https.ClientCertificateMode = ClientCertificateMode.AllowCertificate;
+            // TLS accepts any certificate; trust is decided by the Certificate handler against the configured
+            // root only, never the OS trust store.
+            https.ClientCertificateValidation = (_, _, _) => true;
+            // Only the login port requests a certificate, so the browser shows no picker on the app origin.
+            https.OnAuthenticate = (connection, ssl) =>
+            {
+                if (connection.LocalEndPoint is not IPEndPoint { Port: var port } || port != loginPort)
+                {
+                    ssl.ClientCertificateRequired = false;
+                }
+            };
+        }));
+
+        // Not the default scheme: it only runs on demand in CertificateSignIn, the session stays in the cookie.
+        authentication.AddCertificate(options =>
+        {
+            options.AllowedCertificateTypes = CertificateTypes.Chained;
+            options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
+            options.CustomTrustStore = [root];
+            // The dev root publishes no CRL; a production CA with revocation can switch this on.
+            options.RevocationMode = X509RevocationMode.NoCheck;
+            options.ValidateCertificateUse = true;
+            options.ValidateValidityPeriod = true;
+            options.Events = new CertificateAuthenticationEvents
+            {
+                OnAuthenticationFailed = context =>
+                {
+                    SignInLogger(context.HttpContext).LogWarning(context.Exception, "Client certificate rejected");
+                    return Task.CompletedTask;
+                },
+            };
+        });
     }
 
     // Called after Build: a provider skipped for missing credentials otherwise fails silently with a 400.
@@ -114,6 +179,24 @@ public static class AuthenticationSetup
                     !string.IsNullOrWhiteSpace(section["ClientId"]),
                     !string.IsNullOrWhiteSpace(section["ClientSecret"]));
             }
+        }
+
+        var certificate = CertificateLoginOptions.From(app.Configuration);
+        if (certificate.IsEnabled)
+        {
+            using var root = certificate.LoadRootCertificate();
+            logger.LogInformation(
+                "Certificate sign-in enabled on port {LoginPort}, trusting root {RootSubject} ({RootThumbprint})",
+                certificate.LoginPort,
+                root.Subject,
+                root.Thumbprint);
+        }
+        else
+        {
+            logger.LogWarning(
+                "Certificate sign-in disabled: RootCertificate present: {HasRoot}, LoginPort: {LoginPort}. Build AstraHive.AppHost (Debug) to create the dev root CA",
+                !string.IsNullOrWhiteSpace(certificate.RootCertificate),
+                certificate.LoginPort);
         }
 
         return app;

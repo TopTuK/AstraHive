@@ -30,13 +30,6 @@ public sealed class UpdateUserProfileHandler(
 
         logger.LogInformation("User {UserId} updated profile", user.Id);
 
-        return new UserResponse(
-            user.Id,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            user.AvatarUrl,
-            user.PreferredLanguage,
-            user.CreatedAt);
+        return UserResponse.From(user);
     }
 }

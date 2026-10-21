@@ -111,6 +111,29 @@ public sealed class UserTests
     }
 
     [Fact]
+    public void CreatePending_Email_IsPendingWithNormalizedEmailAndNoNames()
+    {
+        var user = User.CreatePending(" Jane@Example.com ", Now);
+
+        Assert.True(user.IsPending);
+        Assert.Null(user.LastLoginAt);
+        Assert.Equal("jane@example.com", user.Email);
+        Assert.Equal(string.Empty, user.FirstName);
+        Assert.Equal(Now, user.CreatedAt);
+    }
+
+    [Fact]
+    public void RecordLogin_PendingUser_IsNoLongerPending()
+    {
+        var user = User.CreatePending("jane@example.com", Now);
+
+        user.RecordLogin(Now.AddDays(1));
+
+        Assert.False(user.IsPending);
+        Assert.Equal(Now.AddDays(1), user.LastLoginAt);
+    }
+
+    [Fact]
     public void RecordLogin_LaterTime_UpdatesOnlyLastLoginAt()
     {
         var user = User.Create("john@example.com", "John", "Doe", null, Now);
@@ -120,5 +143,26 @@ public sealed class UserTests
 
         Assert.Equal(later, user.LastLoginAt);
         Assert.Equal(Now, user.CreatedAt);
+    }
+
+    [Fact]
+    public void CreateGlobalAdministrator_ValidInput_IsPendingGlobalAdministrator()
+    {
+        var user = User.CreateGlobalAdministrator(" Admin@Example.com ", "Ada", "Admin", Now);
+
+        Assert.True(user.IsGlobalAdministrator);
+        Assert.True(user.IsPending);
+        Assert.Equal("admin@example.com", user.Email);
+        Assert.Equal("Ada", user.FirstName);
+    }
+
+    [Fact]
+    public void PromoteToGlobalAdministrator_RegularUser_BecomesGlobalAdministrator()
+    {
+        var user = User.Create("john@example.com", "John", "Doe", null, Now);
+
+        user.PromoteToGlobalAdministrator();
+
+        Assert.True(user.IsGlobalAdministrator);
     }
 }

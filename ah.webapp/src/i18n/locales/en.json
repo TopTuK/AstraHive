@@ -18,7 +18,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "welcome": "Welcome",
-    "profile": "Profile"
+    "profile": "Profile",
+    "members": "Members"
   },
   "sidebar": {
     "orchestration": "Orchestration",
@@ -115,16 +116,27 @@
   "login": {
     "label": "Access",
     "title": "Sign in to Astra Hive",
-    "text": "Use your Google or Yandex account. An Astra Hive account is created automatically on first sign-in.",
+    "text": "Sign in with your Astra Hive client certificate.",
     "back": "Back to home",
     "imageAlt": "A server secured by a hexagonal lock",
     "google": "Continue with Google",
     "yandex": "Continue with Yandex",
+    "certificate": "Sign in with a certificate",
     "errors": {
       "email_required": "The provider did not share your email address. Allow access to your email and try again.",
       "access_denied": "Sign-in was cancelled.",
-      "sign_in_failed": "Sign-in failed. Please try again."
-    }
+      "sign_in_failed": "Sign-in failed. Please try again.",
+      "certificate_required": "No certificate was selected. Choose your Astra Hive client certificate in the browser prompt.",
+      "certificate_invalid": "The certificate was not issued by a trusted Astra Hive authority or has expired.",
+      "certificate_unavailable": "Certificate sign-in is not configured on this server.",
+      "email_invalid": "The provider returned an email address that is not valid.",
+      "email_unverified": "Your email address is not verified with the provider. Verify it and try again.",
+      "certificate_unknown": "This certificate is not registered, has been revoked or has expired. Ask the administrator for a new one.",
+      "external_login_disabled": "Sign-in with Google or Yandex is turned off. Use your Astra Hive client certificate.",
+      "registration_disabled": "There is no Astra Hive account for this email, and registration is closed. Ask an administrator to add you."
+    },
+    "textExternal": "Use your Google or Yandex account, or an Astra Hive client certificate.",
+    "registration": "An Astra Hive account is created on your first sign-in with Google or Yandex."
   },
   "notFound": {
     "title": "Page not found",
@@ -188,6 +200,90 @@
       "saveFailed": "Couldn't save your profile. Please try again.",
       "loadFailed": "Couldn't load your profile.",
       "retry": "Try again"
+    }
+  },
+  "roles": {
+    "Administrator": "Administrator",
+    "Viewer": "Viewer"
+  },
+  "workspace": {
+    "label": "Workspace",
+    "switch": "Switch workspace (current: {name})",
+    "manageMembers": "Manage members",
+    "loading": "Loading members...",
+    "none": "You are not a member of any workspace. Ask an administrator to add you.",
+    "descriptionAdmin": "People with access to this workspace. Administrators manage members; viewers have read-only access.",
+    "descriptionViewer": "People with access to this workspace. You have read-only access; administrators manage members.",
+    "membersCaption": "Members of {name}",
+    "columns": {
+      "member": "Member",
+      "role": "Role",
+      "actions": "Actions"
+    },
+    "you": "(you)",
+    "pending": "Pending",
+    "pendingHint": "Has not signed in yet. Joins on first sign-in with this email.",
+    "roleFor": "Role of {name}",
+    "remove": "Remove {name}",
+    "removeConfirm": "Remove {name} from this workspace?",
+    "added": "{email} was added.",
+    "roleChanged": "The role of {name} was updated.",
+    "removed": "{name} was removed.",
+    "add": {
+      "title": "Add a member",
+      "email": "Email",
+      "role": "Role",
+      "submit": "Add member",
+      "hint": "Anyone not signed in yet joins this workspace on their first sign-in with this email.",
+      "issueCertificate": "Issue a client certificate for this member"
+    },
+    "errors": {
+      "loadFailed": "Could not load the workspace members.",
+      "retry": "Try again",
+      "emailInvalid": "Enter a valid email address.",
+      "alreadyMember": "This person is already a member of the workspace.",
+      "lastAdministrator": "A workspace needs at least one administrator. Make another member an administrator first.",
+      "forbidden": "Only administrators can manage members.",
+      "notFound": "The workspace or member no longer exists. Refresh the page.",
+      "actionFailed": "The change could not be saved. Please try again."
+    },
+    "globalAdmin": "Global admin",
+    "globalAdminHint": "Created at deployment. Signs in with a certificate only; the role cannot be changed.",
+    "certificates": "Certificates of {name}",
+    "create": {
+      "action": "Create workspace",
+      "prompt": "Name of the new workspace",
+      "failed": "The workspace could not be created."
+    }
+  },
+  "certificates": {
+    "title": "Certificates of {name}",
+    "description": "Client certificates sign this member in. Download a certificate and hand it over together with its password.",
+    "close": "Close",
+    "issue": "Issue certificate",
+    "issued": "Certificate issued. Password for the certificate file:",
+    "password": "Certificate password",
+    "copy": "Copy password",
+    "copied": "Password copied",
+    "passwordOnce": "The password is shown only now. Write it down or pass it on before closing this panel.",
+    "download": "Download certificate",
+    "revoke": "Revoke certificate",
+    "revokeConfirm": "Revoke this certificate of {name}? It will no longer sign in.",
+    "listTitle": "Issued certificates",
+    "loading": "Loading certificates...",
+    "empty": "No certificates yet.",
+    "validUntil": "Valid until {date}",
+    "state": {
+      "active": "Active",
+      "revoked": "Revoked",
+      "expired": "Expired"
+    },
+    "errors": {
+      "forbidden": "Only the global administrator manages certificates.",
+      "notFound": "The member or certificate no longer exists. Refresh the page.",
+      "conflict": "The certificate could not be changed: certificate issuing may be unavailable, or this is the last certificate of the global administrator.",
+      "actionFailed": "The action failed. Please try again.",
+      "loadFailed": "Could not load the certificates."
     }
   }
 }

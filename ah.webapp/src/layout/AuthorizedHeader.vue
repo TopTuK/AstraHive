@@ -18,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAuthStore } from '@/stores/authStore';
 import SidebarNav from './SidebarNav.vue';
+import WorkspaceSwitcher from './WorkspaceSwitcher.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -55,6 +56,7 @@ async function signOut() {
         <SheetTitle class="flex h-(--header-height) items-center border-b border-sidebar-border px-5 text-sidebar-accent-foreground">
           <AppLogo />
         </SheetTitle>
+        <WorkspaceSwitcher @navigate="isMobileNavOpen = false" />
         <SidebarNav @navigate="isMobileNavOpen = false" />
       </SheetContent>
     </Sheet>

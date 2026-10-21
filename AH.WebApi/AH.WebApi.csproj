@@ -18,11 +18,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Certificate" Version="10.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
     <Protobuf Include="..\AH.IdentityService\Protos\user_service.proto" GrpcServices="Client" Link="Protos\user_service.proto" />
+    <Protobuf Include="..\AH.IdentityService\Protos\workspace_service.proto" GrpcServices="Client" Link="Protos\workspace_service.proto" />
+    <Protobuf Include="..\AH.IdentityService\Protos\certificate_service.proto" GrpcServices="Client" Link="Protos\certificate_service.proto" />
   </ItemGroup>
 
   <PropertyGroup>

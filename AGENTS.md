@@ -30,8 +30,16 @@ dotnet ef migrations add <Name> --project AH.Infrastructure --startup-project AH
 dotnet ef database update --project AH.Infrastructure --startup-project AH.IdentityService
 # (outside `aspire run` the tools need ConnectionStrings__astrahive set; IdentityService applies migrations on startup in Development)
 
-# OAuth credentials (once per machine; stored in AppHost user-secrets, never in appsettings)
+# OAuth credentials and the Unleash token (once per machine; stored in AppHost user-secrets, never in appsettings)
 dotnet user-secrets --project AstraHive.AppHost set "Parameters:google-client-id" "<id>"   # also google-client-secret, yandex-client-id, yandex-client-secret
+dotnet user-secrets --project AstraHive.AppHost set "Parameters:unleash-api-token" "<server-side token>"
+
+# Certificates (dev): the Debug build of AstraHive.AppHost runs `tools/AH.CertTool dev` once, creating a root CA (root.pem +
+# root.key.pem) in %LOCALAPPDATA%\AstraHive\dev-certs and the Global Administrator's client cert for admin@astrahive.local
+# (<email>.pfx, password "astrahive", installed into CurrentUser\My; <email>.pem public). Regenerate: delete the folder and
+# rebuild. Another admin email: -p:DevCertUserEmail=<email> AND change devAdminEmail in AppHost.cs.
+# Certificates (PROD, by hand, once): writes root + Global Admin files and prints the deployment parameters to fill
+dotnet run --project tools/AH.CertTool -- init --out <empty dir> --email <admin email> --name "<admin name>"
 
 # Format check
 dotnet format AstraHive.slnx --verify-no-changes
@@ -56,11 +64,12 @@ AH.WebApi/                 # ASP.NET Core Web API (controllers), auth (cookie + 
 AH.Grains.Abstractions/    # Orleans grain interfaces + grain message records ([GenerateSerializer]). → nothing but Orleans SDK
 AH.Grains/                 # Grain implementations (thin; delegate to domain/handlers). → Grains.Abstractions, Application, AppDomain
 AH.SiloHost/               # Orleans silo host (Sdk.Web for health endpoints), composition root. → Grains, Application, Infrastructure, ServiceDefaults
-AH.IdentityService/        # gRPC service (Protos/*.proto) that owns users (GetOrCreateUser); applies migrations in dev. → Application, Infrastructure
+AH.IdentityService/        # gRPC service (Protos/*.proto) that owns users (GetOrCreateUser) and workspaces; applies migrations in dev. → Application, Infrastructure
 ah.webapp/                 # Vue 3 + Vite frontend (JavaScript, oxlint + eslint)
 AstraHive.AppHost/         # Aspire AppHost: orchestrates all resources (DB, cache, services, frontend)
 AstraHive.ServiceDefaults/ # OpenTelemetry, health checks, service discovery, HTTP resilience
 tests/                     # Test projects go here (physical folder, to be created)
+tools/AH.CertTool/         # Console: root CA + Global Admin client certificate (`dev`: run by the AppHost build; `init`: PROD, by hand). Links AH.Infrastructure/Certificates/ClientCertificateFactory.cs. → nothing
 ```
 
 ## Dependency Rules (enforced, never violate)
@@ -69,7 +78,7 @@ tests/                     # Test projects go here (physical folder, to be creat
 - `AH.Application` references only `AH.AppDomain`. It may use `Microsoft.EntityFrameworkCore` abstractions for `DbSet<T>` in `IAppDbContext`, but never Npgsql or Infrastructure types.
 - `AH.Infrastructure` implements interfaces declared in `AH.Application`.
 - `AH.WebApi`, `AH.SiloHost` and `AH.IdentityService` are the composition roots; the ones that touch the database call `AddApplication()` + `AddInfrastructure()`. Controllers call Application handlers (or grains via `IGrainFactory`, or IdentityService via its gRPC client), never `AppDbContext` directly.
-- `AH.WebApi` consumes `AH.IdentityService` only through the linked `Protos/user_service.proto` (`GrpcServices="Client"`), never a project reference.
+- `AH.WebApi` consumes `AH.IdentityService` only through the linked `Protos/user_service.proto` and `Protos/workspace_service.proto` (`GrpcServices="Client"`), never a project reference.
 - **Orleans stays out of the core:** `AH.AppDomain` and `AH.Application` never reference Orleans packages or attributes.
 - Orleans clients (`AH.WebApi`) reference only `AH.Grains.Abstractions`, never `AH.Grains`.
 - Each layer exposes a `DependencyInjection.cs` with an `Add<Layer>(this IServiceCollection)` / `IHostApplicationBuilder` extension.
@@ -95,6 +104,17 @@ tests/                     # Test projects go here (physical folder, to be creat
 - **Serialization:** only types in `AH.Grains.Abstractions` carry `[GenerateSerializer]` / `[Id(n)]`. Map to/from Application DTOs; never put Orleans attributes on domain entities or Application DTOs.
 - Grain interfaces: `I<Name>Grain : IGrainWithGuidKey` (or a string/int key as fits); every method returns `Task`/`ValueTask`, and is async all the way.
 - Prefer `[Reentrant]` / `[ReadOnly]` only with a clear reason; never block inside a grain (`.Result`, `Thread.Sleep`, sync I/O).
+
+### Workspaces (tenancy)
+
+- `Workspace` (`AH.AppDomain/Workspaces`) is the tenant; members have one role each: `Administrator` or `Viewer`. A user can be in many workspaces. Invariant: at least one Administrator per workspace.
+- A user with no membership gets a workspace (as Administrator) in `GetOrCreateUser` only while `ah.registration_enabled` is on. Administrators add members by email; an unknown email becomes a pending `User` (`LastLoginAt` null) that the first sign-in with that email activates.
+- **Global Administrator + main workspace**: `EnsureGlobalAdministrator` runs on every IdentityService start (config `GlobalAdmin:{Email, Name, Certificate}`), idempotently creating or promoting the one `User.IsGlobalAdministrator`, the main workspace (`Workspace.IsMain`, name "AstraHive"; operators only, never clusters: check `Workspace.CanOwnClusters`) and the registration of the admin's bootstrap certificate. `Workspace.IsProtectedMember`: nobody can demote or remove the Global Administrator from the main workspace. The Global Administrator signs in with a certificate only.
+- **Client certificates** (`AH.Application/Certificates`): only the Global Administrator issues, lists, downloads and revokes them, for main-workspace members (`CertificateAccess`). `UserCertificate` rows are the registry certificate sign-in checks (thumbprint = SHA-256 hex, active, not revoked); a certificate never creates a user. The PFX (AES-256, random password returned once, never stored) lives in object storage under `certificates/{userId}/{thumbprint}.pfx`; revoking deletes it. The Global Administrator's last active certificate cannot be revoked.
+- **Feature flags** (`FeatureFlags`, read through `IFeatureFlags`, off when unknown or unreachable): `ah.external_login` allows Google/Yandex for everyone but the Global Administrator (otherwise certificate only); `ah.registration_enabled` lets unknown emails register through Google/Yandex and allows `CreateWorkspace`. Enforced in Application handlers; WebApi reads them (`SignInFeatures`) only for `/api/auth/options` and to skip a doomed OAuth challenge.
+- Sign-in failures travel as `Error.Code` (`SignInErrors`) in the gRPC `error-code` trailer (`RpcResults`); `SignInProvisioner` maps them to the SPA's `/login?error=` codes.
+- **Authorization is checked in Application handlers against the database** (`WorkspaceAccess`), with the caller's id passed as `requester_id` over gRPC. Never put roles or workspace ids in cookie claims. Non-members get NotFound, Viewers get Forbidden on changes.
+- Future workspace-owned data (clusters, VMs, tasks) carries a `WorkspaceId` and is loaded through the same membership check.
 
 ### Controllers
 
@@ -126,7 +146,10 @@ tests/                     # Test projects go here (physical folder, to be creat
 - **FluentValidation**: request validation
 - **ProblemDetails** (RFC 9457) + global `IExceptionHandler` for error responses
 - **Observability**: Serilog (configured once in ServiceDefaults `AddSerilogDefaults()`, settings in each host's `Serilog` appsettings section, `writeToProviders` → OpenTelemetry → Aspire dashboard). Code injects `ILogger<T>` via constructor; only hosts and ServiceDefaults reference Serilog
-- **Auth**: external sign-in only (Google via `Microsoft.AspNetCore.Authentication.Google`, Yandex via `AspNet.Security.OAuth.Yandex`), handled in `AH.WebApi/Auth`. The session is an HttpOnly cookie (`astrahive.session`, SameSite=Lax); there are no JWTs and no local passwords. On `OnCreatingTicket` WebApi calls IdentityService `GetOrCreateUser` (users matched by email) and puts the internal user id in `NameIdentifier`. Endpoints: `GET /api/auth/login/{provider}?returnUrl=`, `GET /api/auth/me`, `POST /api/auth/logout`. Profile: `GET /api/profile` (fresh from IdentityService `GetUser`) and `PUT /api/profile` (`UpdateUserProfile`; WebApi then reissues the session cookie so `/api/auth/me` shows the new name). Provider sign-in only fills names that are still empty (`User.SyncFromProvider`): a user's own edits (`User.Rename`) always win; the avatar keeps syncing. OAuth callbacks (handled by the OAuth middleware) are `/auth/signin-{google,yandex}` on the WebApi origin: in development `https://localhost:7093/auth/signin-google` and `https://localhost:7093/auth/signin-yandex`. These are registered with the providers, so keep the port pinned (WebApi `https` launch profile, selected via `launchProfileName: "https"` in the AppHost). Credentials come from AppHost secret parameters (`google-client-id`, `google-client-secret`, `yandex-client-id`, `yandex-client-secret`) as `Authentication__{Google,Yandex}__{ClientId,ClientSecret}`.
+- **Auth**: Google/Yandex (behind `ah.external_login`) and client certificates (Google via `Microsoft.AspNetCore.Authentication.Google`, Yandex via `AspNet.Security.OAuth.Yandex`), handled in `AH.WebApi/Auth`. The session is an HttpOnly cookie (`astrahive.session`, SameSite=Lax); there are no JWTs and no local passwords. On `OnCreatingTicket` WebApi calls IdentityService `GetOrCreateUser` through `SignInProvisioner` (users matched by email; the one email check for every sign-in method: required, valid, and not `email_verified=false` from Google) and puts the internal user id in `NameIdentifier`. Endpoints: `GET /api/auth/login/{provider}?returnUrl=`, `GET /api/auth/options`, `GET /api/auth/me`, `POST /api/auth/logout`. Profile: `GET /api/profile` (fresh from IdentityService `GetUser`) and `PUT /api/profile` (`UpdateUserProfile`; WebApi then reissues the session cookie so `/api/auth/me` shows the new name). Provider sign-in only fills names that are still empty (`User.SyncFromProvider`): a user's own edits (`User.Rename`) always win; the avatar keeps syncing. OAuth callbacks (handled by the OAuth middleware) are `/auth/signin-{google,yandex}` on the WebApi origin: in development `https://localhost:7093/auth/signin-google` and `https://localhost:7093/auth/signin-yandex`. These are registered with the providers, so keep the port pinned (WebApi `https` launch profile, selected via `launchProfileName: "https"` in the AppHost). Credentials come from AppHost secret parameters (`google-client-id`, `google-client-secret`, `yandex-client-id`, `yandex-client-secret`) as `Authentication__{Google,Yandex}__{ClientId,ClientSecret}`. **Client-certificate sign-in** (`GET /api/auth/login/certificate?returnUrl=`): on :7093 it redirects to the dedicated port **7094** (AppHost endpoint `certificate`, `isProxied: false`). That is the only port whose TLS handshake requests a client certificate: Kestrel's `ClientCertificateMode.AllowCertificate` + `OnAuthenticate` turns the request off on other ports. There `CertificateSignIn` runs the Certificate handler (chain to the configured root only, `CustomRootTrust`, clientAuth EKU), takes the email from the SAN and the name from the CN, calls `GetOrCreateUser` through the same `SignInProvisioner` with the certificate's SHA-256 thumbprint (must be a registered, unrevoked `UserCertificate` of that user, else `certificate_unknown`) and issues the same session cookie (cookies ignore the port), then redirects to `AppOrigin`. Config: `Authentication:Certificate:{RootCertificate (PEM path or inline PEM, public only), LoginPort, AppOrigin}`, all set by the AppHost in development; without a root or a port the feature is off (`/login?error=certificate_unavailable`). The root's private key never goes to WebApi.
+- **Object storage**: MinIO (AppHost `AddMinioContainer("minio")`, CommunityToolkit Aspire integrations), used by IdentityService only through `IObjectStorage` (`MinioObjectStorage`, bucket `ObjectStorage:Bucket`, default `astrahive`, created on first use)
+- **Feature flags**: Unleash (`Unleash.Client`), one `IUnleash` per host from `AddFeatureFlagClient()` in ServiceDefaults (config `Unleash:{ApiUrl, ApiToken}` from AppHost parameters `unleash-api-url`, `unleash-api-token`; without them every flag is off). Server-side (client API) token only; the SPA gets flags from `GET /api/auth/options`
+- **Certificate authority**: IdentityService only (`CertificateAuthority:{Certificate, PrivateKey}`, PEM text or path). WebApi gets the root's public PEM only. Run mode: dev files; publish mode: AppHost parameters `certificate-root`, `certificate-root-key`, `global-admin-email`, `global-admin-name`, `global-admin-certificate` (output of `AH.CertTool init`)
 - **Messaging**: none. Services communicate synchronously over gRPC/HTTP with Aspire service discovery
 - **Frontend**: Vue 3, Vite 8, Node `^22.18 || >=24.12`
 - **Testing**: xUnit v3, WebApplicationFactory, Testcontainers.PostgreSql, Verify
@@ -190,4 +213,4 @@ Do NOT generate code that:
 - Uses string interpolation in log messages: use structured message templates
 - References Serilog (or its static `Log`) outside host `Program.cs` / ServiceDefaults: inject `ILogger<T>`
 - Adds MediatR, AutoMapper, MassTransit v9+, or FluentAssertions v8+ (commercial licenses)
-- Puts OAuth client ids/secrets in appsettings or source; use the AppHost secret parameters
+- Puts OAuth client ids/secrets, the Unleash token or the root CA key in appsettings or source; use the AppHost secret parameters

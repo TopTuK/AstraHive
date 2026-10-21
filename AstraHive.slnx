@@ -16,6 +16,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/AH.Application.Tests/AH.Application.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/AH.CertTool/AH.CertTool.csproj" />
+  </Folder>
   <Project Path="AstraHive.AppHost/AstraHive.AppHost.csproj" />
   <Project Path="AstraHive.ServiceDefaults/AstraHive.ServiceDefaults.csproj" />
 </Solution>
